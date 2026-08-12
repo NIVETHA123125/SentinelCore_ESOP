@@ -2,7 +2,18 @@ import axios from 'axios';
 
 const API_BASE = 'http://localhost:8080/api/assets';
 
-export const getAllAssets = () => axios.get(API_BASE);
-export const getDashboardSummary = () => axios.get(`${API_BASE}/dashboard/summary`);
-export const createAsset = (data) => axios.post(API_BASE, data);
-export const deleteAsset = (id) => axios.delete(`${API_BASE}/${id}`);
+const axiosInstance = axios.create({ baseURL: API_BASE });
+
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const getAllAssets = () => axiosInstance.get('');
+export const getDashboardSummary = () => axiosInstance.get('/dashboard/summary');
+export const createAsset = (data) => axiosInstance.post('', data);
+export const updateAsset = (id, data) => axiosInstance.put(`/${id}`, data);
+export const deleteAsset = (id) => axiosInstance.delete(`/${id}`);

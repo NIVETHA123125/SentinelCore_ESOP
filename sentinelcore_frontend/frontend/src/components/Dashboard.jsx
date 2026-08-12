@@ -15,7 +15,7 @@ const statusColor = (status) => {
   }
 };
 
-function Dashboard() {
+function Dashboard({ onLogout }) {
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -56,13 +56,23 @@ function Dashboard() {
   return (
     <Box sx={{ bgcolor: '#EEF2F1', minHeight: '100vh' }}>
       <AppBar position="static" sx={{ bgcolor: '#1E2E2C' }} elevation={0}>
-        <Toolbar>
-          <Typography variant="h6" sx={{ fontWeight: 600, letterSpacing: 0.5 }}>
-            SentinelCore ESOP
-          </Typography>
-          <Typography variant="body2" sx={{ ml: 2, opacity: 0.65, fontFamily: 'monospace' }}>
-            Infrastructure Monitoring
-          </Typography>
+        <Toolbar sx={{ justifyContent: 'space-between' }}>
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 600, letterSpacing: 0.5 }}>
+              Cloud security monitoring system with incident management assistance
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.65, fontFamily: 'monospace' }}>
+              Infrastructure Monitoring
+            </Typography>
+          </Box>
+          <Button
+            onClick={onLogout}
+            sx={{ color: '#EEF2F1', borderColor: '#4A7A73' }}
+            variant="outlined"
+            size="small"
+          >
+            Logout
+          </Button>
         </Toolbar>
       </AppBar>
 
