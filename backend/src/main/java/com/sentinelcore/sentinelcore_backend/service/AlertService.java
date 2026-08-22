@@ -7,6 +7,7 @@ import com.sentinelcore.sentinelcore_backend.repository.AlertRepository;
 import com.sentinelcore.sentinelcore_backend.repository.InfrastructureAssetRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,6 +19,10 @@ public class AlertService {
 
     private final AlertRepository alertRepository;
     private final InfrastructureAssetRepository assetRepository;
+    private final NotificationService notificationService;
+
+    @Value("${twilio.to.phone.number}")
+    private String toPhoneNumber;
 
     public AlertDTO createAlert(Long assetId, String severity, String message) {
         InfrastructureAsset asset = assetRepository.findById(assetId)
@@ -31,7 +36,23 @@ public class AlertService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        return toDTO(alertRepository.save(alert));
+        alert = alertRepository.save(alert);
+        
+        notificationService.sendAlertEmail(
+                "mynew222028@gmail.com",
+                asset.getAssetName(), 
+                alert.getSeverity().name(), 
+                alert.getMessage()
+        );
+
+        notificationService.sendAlertSms(
+                toPhoneNumber,
+                asset.getAssetName(),
+                alert.getSeverity().name(),
+                alert.getMessage()
+        );
+
+        return toDTO(alert);
     }
 
     public AlertDTO resolveAlert(Long alertId) {

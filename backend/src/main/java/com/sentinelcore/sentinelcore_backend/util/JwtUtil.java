@@ -2,25 +2,37 @@ package com.sentinelcore.sentinelcore_backend.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
 public class JwtUtil {
 
-    // Secret key used to sign/verify tokens — generated once when the app starts
-    private final SecretKey secretKey = Jwts.SIG.HS256.key().build();
+    private static final String SECRET_STRING = "SentinelCoreSecretKeyForJwtAuthenticationMustBeAtLeast256BitsLong123!";
+    private final SecretKey secretKey = Keys.hmacShaKeyFor(SECRET_STRING.getBytes(StandardCharsets.UTF_8));
 
-    private final long EXPIRATION_TIME = 1000 * 60 * 60 * 10; // 10 hours
+    private final long ACCESS_EXPIRATION = 1000 * 60 * 15; // 15 minutes
+    private final long REFRESH_EXPIRATION = 1000 * 60 * 60 * 24 * 7; // 7 days
 
     public String generateToken(String username, String role) {
         return Jwts.builder()
                 .subject(username)
                 .claim("role", role)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .expiration(new Date(System.currentTimeMillis() + ACCESS_EXPIRATION))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public String generateRefreshToken(String username) {
+        return Jwts.builder()
+                .subject(username)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + REFRESH_EXPIRATION))
                 .signWith(secretKey)
                 .compact();
     }

@@ -18,7 +18,7 @@ public class HealthMonitorService {
     private static final double CPU_CRITICAL_THRESHOLD = 90.0;
     private static final double MEMORY_WARNING_THRESHOLD = 80.0;
 
-    @Scheduled(fixedRate = 60000) // runs every 60 seconds
+    @Scheduled(fixedRate = 60000) // runs every 1minutes
     public void checkAssetHealth() {
         List<InfrastructureAsset> assets = assetRepository.findAll();
 
@@ -30,8 +30,7 @@ public class HealthMonitorService {
                 alertService.createAlert(
                         asset.getId(),
                         "CRITICAL",
-                        "CPU usage critical: " + asset.getCpuUsage() + "%"
-                );
+                        "CPU usage critical: " + asset.getCpuUsage() + "%");
 
             } else if (asset.getMemoryUsage() != null &&
                     asset.getMemoryUsage() >= MEMORY_WARNING_THRESHOLD) {
@@ -40,8 +39,7 @@ public class HealthMonitorService {
                 alertService.createAlert(
                         asset.getId(),
                         "MEDIUM",
-                        "Memory usage high: " + asset.getMemoryUsage() + "%"
-                );
+                        "Memory usage high: " + asset.getMemoryUsage() + "%");
 
             } else {
                 asset.setAssetStatus("ONLINE");

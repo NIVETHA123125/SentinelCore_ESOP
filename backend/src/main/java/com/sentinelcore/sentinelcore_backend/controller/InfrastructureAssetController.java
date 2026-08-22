@@ -5,6 +5,7 @@ import com.sentinelcore.sentinelcore_backend.dto.InfrastructureAssetDTO;
 import com.sentinelcore.sentinelcore_backend.service.InfrastructureAssetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -24,6 +25,7 @@ public class InfrastructureAssetController {
 
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public InfrastructureAssetDTO createAsset(@RequestBody InfrastructureAssetDTO dto) {
         return assetService.createAsset(dto);
     }
@@ -35,11 +37,13 @@ public class InfrastructureAssetController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public InfrastructureAssetDTO updateAsset(@PathVariable Long id, @RequestBody InfrastructureAssetDTO dto) {
         return assetService.updateAsset(id, dto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteAsset(@PathVariable Long id) {
         assetService.deleteAsset(id);
     }

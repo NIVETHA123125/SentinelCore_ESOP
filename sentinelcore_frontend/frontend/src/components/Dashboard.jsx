@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Container, Typography, TextField, Button, Grid, Card, CardContent,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Chip, AppBar, Toolbar
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Chip, AppBar, Toolbar,
+  MenuItem, Select, InputLabel, FormControl,
+  Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { getAllAssets, getDashboardSummary, createAsset, deleteAsset } from '../api/assetApi';
+import AlertNotifier from './AlertNotifier';
+import { useAuth } from '../context/AuthContext';
 
 const statusColor = (status) => {
   switch (status?.toUpperCase()) {
@@ -15,7 +20,9 @@ const statusColor = (status) => {
   }
 };
 
-function Dashboard({ onLogout }) {
+function Dashboard() {
+  const navigate = useNavigate();
+  const { isAdmin, logoutUser } = useAuth();
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,6 +31,13 @@ function Dashboard({ onLogout }) {
     assetName: '', assetType: '', ipAddress: '',
     cpuUsage: '', memoryUsage: '', diskUsage: '', networkUsage: '', assetStatus: ''
   });
+
+  // --- Search / filter state ---
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+
+  // --- Delete confirmation state ---
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const fetchAssets = () => {
     getAllAssets()
@@ -46,15 +60,35 @@ function Dashboard({ onLogout }) {
       .catch((err) => alert('Error creating asset: ' + err.message));
   };
 
-  const handleDelete = (id) => {
-    deleteAsset(id).then(() => fetchAssets()).catch((err) => alert('Error deleting asset: ' + err.message));
+  const requestDelete = (asset) => setConfirmDelete(asset);
+
+  const confirmDeleteAsset = () => {
+    if (!confirmDelete) return;
+    deleteAsset(confirmDelete.id)
+      .then(() => { fetchAssets(); setConfirmDelete(null); })
+      .catch((err) => { alert('Error deleting asset: ' + err.message); setConfirmDelete(null); });
   };
+
+  const filteredAssets = assets.filter((asset) => {
+    const term = searchTerm.trim().toLowerCase();
+    const matchesSearch =
+      term === '' ||
+      asset.assetName?.toLowerCase().includes(term) ||
+      asset.assetType?.toLowerCase().includes(term) ||
+      asset.ipAddress?.toLowerCase().includes(term);
+
+    const matchesStatus =
+      statusFilter === 'ALL' || asset.assetStatus?.toUpperCase() === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   if (loading) return <Typography sx={{ p: 3, fontFamily: 'monospace' }}>Loading assets...</Typography>;
   if (error) return <Typography sx={{ p: 3 }} color="error">Error: {error}</Typography>;
 
   return (
     <Box sx={{ bgcolor: '#EEF2F1', minHeight: '100vh' }}>
+      <AlertNotifier />
       <AppBar position="static" sx={{ bgcolor: '#1E2E2C' }} elevation={0}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
           <Box>
@@ -65,20 +99,30 @@ function Dashboard({ onLogout }) {
               Infrastructure Monitoring
             </Typography>
           </Box>
-          <Button
-            onClick={onLogout}
-            sx={{ color: '#EEF2F1', borderColor: '#4A7A73' }}
-            variant="outlined"
-            size="small"
-          >
-            Logout
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              onClick={() => navigate('/alerts')}
+              sx={{ color: '#EEF2F1', borderColor: '#4A7A73' }}
+              variant="outlined"
+              size="small"
+            >
+              Alert History
+            </Button>
+            <Button
+              onClick={logoutUser}
+              sx={{ color: '#EEF2F1', borderColor: '#4A7A73' }}
+              variant="outlined"
+              size="small"
+            >
+              Logout
+            </Button>
+          </Box>
         </Toolbar>
       </AppBar>
 
       <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, sm: 3, md: 8 } }}>
 
-        {/* Summary Cards - centered as a group */}
+        {/* Summary Cards */}
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 4, flexWrap: 'wrap' }}>
           <Card elevation={0} sx={{ border: '1px solid #D8E0DE', borderRadius: 2, width: 220 }}>
             <CardContent>
@@ -92,19 +136,34 @@ function Dashboard({ onLogout }) {
               <Typography variant="h3" sx={{ fontWeight: 700, color: '#2E7D32' }}>{summary.uptimePercent}%</Typography>
             </CardContent>
           </Card>
-          <Card elevation={0} sx={{ border: '1px solid #D8E0DE', borderRadius: 2, width: 220 }}>
+          <Card
+            elevation={0}
+            onClick={() => navigate('/alerts')}
+            sx={{
+              border: '1px solid #D8E0DE',
+              borderRadius: 2,
+              width: 220,
+              cursor: 'pointer',
+              transition: 'transform 0.15s, box-shadow 0.15s',
+              '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }
+            }}
+          >
             <CardContent>
               <Typography variant="overline" color="text.secondary">Active Alerts</Typography>
               <Typography variant="h3" sx={{ fontWeight: 700, color: summary.activeAlerts > 0 ? '#C62828' : 'inherit' }}>
                 {summary.activeAlerts}
               </Typography>
+              <Typography variant="caption" sx={{ color: '#4A7A73', textDecoration: 'underline' }}>
+                Click to view history →
+              </Typography>
             </CardContent>
           </Card>
         </Box>
 
-        {/* Add Asset Form */}
-        <Card elevation={0} sx={{ mb: 4, border: '1px solid #D8E0DE', borderRadius: 2 }}>
-          <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* Add Asset Form - Admin Only */}
+        {isAdmin && (
+          <Card elevation={0} sx={{ mb: 4, border: '1px solid #D8E0DE', borderRadius: 2 }}>
+            <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 3, color: '#1E2E2C' }}>
               Register New Asset
             </Typography>
@@ -129,8 +188,9 @@ function Dashboard({ onLogout }) {
                 </Button>
               </Box>
             </Box>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Usage Chart */}
         <Card elevation={0} sx={{ mb: 4, border: '1px solid #D8E0DE', borderRadius: 2 }}>
@@ -159,17 +219,47 @@ function Dashboard({ onLogout }) {
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#1E2E2C', textAlign: 'center' }}>
               Current Assets
             </Typography>
+
+            <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <TextField
+                size="small"
+                label="Search by name, type, or IP"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                sx={{ minWidth: 260 }}
+              />
+              <FormControl size="small" sx={{ minWidth: 180 }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={statusFilter}
+                  label="Status"
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <MenuItem value="ALL">All Statuses</MenuItem>
+                  <MenuItem value="ONLINE">Online</MenuItem>
+                  <MenuItem value="WARNING">Warning</MenuItem>
+                  <MenuItem value="CRITICAL">Critical</MenuItem>
+                  <MenuItem value="OFFLINE">Offline</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#607068' }}>
+              Showing {filteredAssets.length} of {assets.length} assets
+            </Typography>
+
             <TableContainer component={Paper} elevation={0}>
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ '& th': { fontWeight: 700, bgcolor: '#F5F8F7' } }}>
                     <TableCell>ID</TableCell><TableCell>Name</TableCell><TableCell>Type</TableCell>
                     <TableCell>IP</TableCell><TableCell>CPU %</TableCell><TableCell>Memory %</TableCell>
-                    <TableCell>Disk %</TableCell><TableCell>Network</TableCell><TableCell>Status</TableCell><TableCell align="right">Action</TableCell>
+                    <TableCell>Disk %</TableCell><TableCell>Network</TableCell><TableCell>Status</TableCell>
+                    {isAdmin && <TableCell align="right">Action</TableCell>}
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {assets.map((asset) => {
+                  {filteredAssets.map((asset) => {
                     const sc = statusColor(asset.assetStatus);
                     return (
                       <TableRow key={asset.id} hover>
@@ -184,18 +274,41 @@ function Dashboard({ onLogout }) {
                         <TableCell>
                           <Chip label={asset.assetStatus} size="small" sx={{ bgcolor: sc.bg, color: sc.text, fontWeight: 600 }} />
                         </TableCell>
-                        <TableCell align="right">
-                          <Button color="error" size="small" onClick={() => handleDelete(asset.id)}>Delete</Button>
-                        </TableCell>
+                        {isAdmin && (
+                          <TableCell align="right">
+                            <Button color="error" size="small" onClick={() => requestDelete(asset)}>Delete</Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     );
                   })}
+                  {filteredAssets.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={10} align="center" sx={{ color: '#8A9A95', py: 3 }}>
+                        No assets match your search/filter.
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
           </CardContent>
         </Card>
       </Container>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!confirmDelete} onClose={() => setConfirmDelete(null)}>
+        <DialogTitle>Delete Asset?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete <strong>{confirmDelete?.assetName}</strong>? This can't be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDelete(null)}>Cancel</Button>
+          <Button onClick={confirmDeleteAsset} color="error" variant="contained">Delete</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

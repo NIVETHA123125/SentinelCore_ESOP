@@ -2,6 +2,7 @@ package com.sentinelcore.sentinelcore_backend.service;
 
 import com.sentinelcore.sentinelcore_backend.dto.InfrastructureAssetDTO;
 import com.sentinelcore.sentinelcore_backend.entity.InfrastructureAsset;
+import com.sentinelcore.sentinelcore_backend.repository.AlertRepository;
 import com.sentinelcore.sentinelcore_backend.repository.InfrastructureAssetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,9 @@ public class InfrastructureAssetService {
 
     @Autowired
     private InfrastructureAssetRepository assetRepository;
+
+    @Autowired
+    private AlertRepository alertRepository;
 
 
     public List<InfrastructureAssetDTO> getAllAssets() {
@@ -83,6 +87,7 @@ public class InfrastructureAssetService {
     }
 
     public void deleteAsset(Long id) {
+        alertRepository.deleteAll(alertRepository.findByAssetId(id));
         assetRepository.deleteById(id);
     }
     public List<InfrastructureAssetDTO> getAssetsByType(String assetType) {

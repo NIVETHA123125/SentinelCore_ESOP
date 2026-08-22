@@ -3,6 +3,8 @@ package com.sentinelcore.sentinelcore_backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Set;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -22,6 +24,15 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
-    private String role; // e.g. ADMIN, USER
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles;
+
+    @Column(columnDefinition = "boolean default true")
+    @Builder.Default
+    private boolean enabled = true;
 }
