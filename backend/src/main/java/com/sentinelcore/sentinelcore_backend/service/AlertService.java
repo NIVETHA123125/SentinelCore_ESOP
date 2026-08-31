@@ -38,19 +38,26 @@ public class AlertService {
 
         alert = alertRepository.save(alert);
         
-        notificationService.sendAlertEmail(
-                "mynew222028@gmail.com",
-                asset.getAssetName(), 
-                alert.getSeverity().name(), 
-                alert.getMessage()
-        );
-
-        notificationService.sendAlertSms(
-                toPhoneNumber,
-                asset.getAssetName(),
-                alert.getSeverity().name(),
-                alert.getMessage()
-        );
+        LocalDateTime now = LocalDateTime.now();
+        if (asset.getLastNotificationAt() == null || asset.getLastNotificationAt().isBefore(now.minusMinutes(3))) {
+            if ("CRITICAL".equalsIgnoreCase(severity)) {
+                notificationService.sendAlertSms(
+                        toPhoneNumber,
+                        asset.getAssetName(),
+                        alert.getSeverity().name(),
+                        alert.getMessage()
+                );
+            } else {
+                notificationService.sendAlertEmail(
+                        "mynew222028@gmail.com",
+                        asset.getAssetName(), 
+                        alert.getSeverity().name(), 
+                        alert.getMessage()
+                );
+            }
+            asset.setLastNotificationAt(now);
+            assetRepository.save(asset);
+        }
 
         return toDTO(alert);
     }

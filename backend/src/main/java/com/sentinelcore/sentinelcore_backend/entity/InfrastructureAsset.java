@@ -32,4 +32,6 @@ public class InfrastructureAsset {
     private String assetStatus;
 
     private LocalDateTime createdAt;
+    
+    private LocalDateTime lastNotificationAt;
 }

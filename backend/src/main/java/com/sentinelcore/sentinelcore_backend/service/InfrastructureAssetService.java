@@ -39,6 +39,7 @@ public class InfrastructureAssetService {
 
 
     public InfrastructureAssetDTO createAsset(InfrastructureAssetDTO dto) {
+        String calculatedStatus = com.sentinelcore.sentinelcore_backend.util.AssetStatusEvaluator.evaluateStatus(dto.getCpuUsage(), dto.getMemoryUsage());
         InfrastructureAsset asset = InfrastructureAsset.builder()
                 .assetName(dto.getAssetName())
                 .assetType(dto.getAssetType())
@@ -47,7 +48,7 @@ public class InfrastructureAssetService {
                 .memoryUsage(dto.getMemoryUsage())
                 .diskUsage(dto.getDiskUsage())
                 .networkUsage(dto.getNetworkUsage())
-                .assetStatus(dto.getAssetStatus())
+                .assetStatus(calculatedStatus)
                 .createdAt(LocalDateTime.now())
                 .build();
         InfrastructureAsset saved = assetRepository.save(asset);
@@ -81,7 +82,10 @@ public class InfrastructureAssetService {
         asset.setMemoryUsage(dto.getMemoryUsage());
         asset.setDiskUsage(dto.getDiskUsage());
         asset.setNetworkUsage(dto.getNetworkUsage());
-        asset.setAssetStatus(dto.getAssetStatus());
+        
+        String calculatedStatus = com.sentinelcore.sentinelcore_backend.util.AssetStatusEvaluator.evaluateStatus(dto.getCpuUsage(), dto.getMemoryUsage());
+        asset.setAssetStatus(calculatedStatus);
+        
         InfrastructureAsset updated = assetRepository.save(asset);
         return toDTO(updated);
     }
