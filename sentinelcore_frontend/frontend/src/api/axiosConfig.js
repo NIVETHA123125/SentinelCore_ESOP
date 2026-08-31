@@ -2,7 +2,9 @@ import axios from 'axios';
 import { refreshAccessToken } from './authApi';
 import Cookies from 'js-cookie';
 
-axios.interceptors.request.use((config) => {
+const api = axios.create();
+
+api.interceptors.request.use((config) => {
   const token = Cookies.get('accessToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -10,7 +12,7 @@ axios.interceptors.request.use((config) => {
   return config;
 });
 
-axios.interceptors.response.use(
+api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
@@ -31,7 +33,7 @@ axios.interceptors.response.use(
         const newAccessToken = res.data.accessToken;
         Cookies.set('accessToken', newAccessToken, { expires: 1 });
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return axios(originalRequest);
+        return api(originalRequest);
       } catch (refreshError) {
         Cookies.remove('accessToken');
         Cookies.remove('refreshToken');
@@ -43,3 +45,5 @@ axios.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export default api;

@@ -1,34 +1,9 @@
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import api from './axiosConfig';
 
 const API_BASE = 'http://localhost:8080/api/assets';
 
-const axiosInstance = axios.create({ baseURL: API_BASE });
-
-axiosInstance.interceptors.request.use((config) => {
-  const token = Cookies.get('accessToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      Cookies.remove('accessToken');
-      Cookies.remove('refreshToken');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-    }
-    return Promise.reject(error);
-  }
-);
-
-export const getAllAssets = () => axiosInstance.get('');
-export const getDashboardSummary = () => axiosInstance.get('/dashboard/summary');
-export const createAsset = (data) => axiosInstance.post('', data);
-export const updateAsset = (id, data) => axiosInstance.put(`/${id}`, data);
-export const deleteAsset = (id) => axiosInstance.delete(`/${id}`);
+export const getAllAssets = () => api.get(API_BASE);
+export const getDashboardSummary = () => api.get(`${API_BASE}/dashboard/summary`);
+export const createAsset = (data) => api.post(API_BASE, data);
+export const updateAsset = (id, data) => api.put(`${API_BASE}/${id}`, data);
+export const deleteAsset = (id) => api.delete(`${API_BASE}/${id}`);

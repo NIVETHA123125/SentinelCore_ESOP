@@ -4,7 +4,7 @@ import {
   Container, Typography, TextField, Button, Grid, Card, CardContent,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Chip, AppBar, Toolbar,
   MenuItem, Select, InputLabel, FormControl,
-  Dialog, DialogTitle, DialogContent, DialogActions
+  Dialog, DialogTitle, DialogContent, DialogActions, Skeleton
 } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { getAllAssets, getDashboardSummary, createAsset, deleteAsset } from '../api/assetApi';
@@ -13,10 +13,10 @@ import { useAuth } from '../context/AuthContext';
 
 const statusColor = (status) => {
   switch (status?.toUpperCase()) {
-    case 'ONLINE': case 'UP': return { bg: '#1B5E20', text: '#A5D6A7' };
-    case 'WARNING': return { bg: '#7A4F01', text: '#FFCC80' };
-    case 'CRITICAL': case 'DOWN': return { bg: '#7F1D1D', text: '#FCA5A5' };
-    default: return { bg: '#37474F', text: '#CFD8DC' };
+    case 'ONLINE': case 'UP': return { bg: 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%)', text: '#E8F5E9', border: '#4CAF50' };
+    case 'WARNING': return { bg: 'linear-gradient(135deg, #E65100 0%, #F57C00 100%)', text: '#FFF3E0', border: '#FF9800' };
+    case 'CRITICAL': case 'DOWN': return { bg: 'linear-gradient(135deg, #880E4F 0%, #C2185B 100%)', text: '#FCE4EC', border: '#E91E63' };
+    default: return { bg: 'linear-gradient(135deg, #263238 0%, #37474F 100%)', text: '#ECEFF1', border: '#607D8B' };
   }
 };
 
@@ -57,7 +57,7 @@ function Dashboard() {
         setFormData({ assetName: '', assetType: '', ipAddress: '', cpuUsage: '', memoryUsage: '', diskUsage: '', networkUsage: '', assetStatus: '' });
         fetchAssets();
       })
-      .catch((err) => alert('Error creating asset: ' + err.message));
+      .catch((err) => alert('Error creating asset: ' + (err.response?.data?.message || err.message)));
   };
 
   const requestDelete = (asset) => setConfirmDelete(asset);
@@ -66,7 +66,7 @@ function Dashboard() {
     if (!confirmDelete) return;
     deleteAsset(confirmDelete.id)
       .then(() => { fetchAssets(); setConfirmDelete(null); })
-      .catch((err) => { alert('Error deleting asset: ' + err.message); setConfirmDelete(null); });
+      .catch((err) => { alert('Error deleting asset: ' + (err.response?.data?.message || err.message)); setConfirmDelete(null); });
   };
 
   const filteredAssets = assets.filter((asset) => {
@@ -83,7 +83,6 @@ function Dashboard() {
     return matchesSearch && matchesStatus;
   });
 
-  if (loading) return <Typography sx={{ p: 3, fontFamily: 'monospace' }}>Loading assets...</Typography>;
   if (error) return <Typography sx={{ p: 3 }} color="error">Error: {error}</Typography>;
 
   return (
@@ -124,40 +123,41 @@ function Dashboard() {
 
         {/* Summary Cards */}
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 4, flexWrap: 'wrap' }}>
-          <Card elevation={0} sx={{ border: '1px solid #D8E0DE', borderRadius: 2, width: 220 }}>
-            <CardContent>
-              <Typography variant="overline" color="text.secondary">Total Assets</Typography>
-              <Typography variant="h3" sx={{ fontWeight: 700, color: '#1E2E2C' }}>{summary.totalAssets}</Typography>
-            </CardContent>
-          </Card>
-          <Card elevation={0} sx={{ border: '1px solid #D8E0DE', borderRadius: 2, width: 220 }}>
-            <CardContent>
-              <Typography variant="overline" color="text.secondary">Uptime</Typography>
-              <Typography variant="h3" sx={{ fontWeight: 700, color: '#2E7D32' }}>{summary.uptimePercent}%</Typography>
-            </CardContent>
-          </Card>
-          <Card
-            elevation={0}
-            onClick={() => navigate('/alerts')}
-            sx={{
-              border: '1px solid #D8E0DE',
-              borderRadius: 2,
-              width: 220,
-              cursor: 'pointer',
-              transition: 'transform 0.15s, box-shadow 0.15s',
-              '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }
-            }}
-          >
-            <CardContent>
-              <Typography variant="overline" color="text.secondary">Active Alerts</Typography>
-              <Typography variant="h3" sx={{ fontWeight: 700, color: summary.activeAlerts > 0 ? '#C62828' : 'inherit' }}>
-                {summary.activeAlerts}
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#4A7A73', textDecoration: 'underline' }}>
-                Click to view history →
-              </Typography>
-            </CardContent>
-          </Card>
+          {[
+            { label: 'Total Assets', value: summary.totalAssets, color: '#1E2E2C', clickable: false },
+            { label: 'Uptime', value: `${summary.uptimePercent}%`, color: '#2E7D32', clickable: false },
+            { label: 'Active Alerts', value: summary.activeAlerts, color: summary.activeAlerts > 0 ? '#C62828' : 'inherit', clickable: true }
+          ].map((card, idx) => (
+            <Card
+              key={idx}
+              elevation={0}
+              onClick={card.clickable ? () => navigate('/alerts') : undefined}
+              sx={{
+                border: '1px solid #D8E0DE',
+                borderRadius: 2,
+                width: 220,
+                cursor: card.clickable ? 'pointer' : 'default',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+                '&:hover': card.clickable ? { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' } : {}
+              }}
+            >
+              <CardContent>
+                <Typography variant="overline" color="text.secondary">{card.label}</Typography>
+                {loading ? (
+                  <Skeleton variant="text" width="60%" height={60} />
+                ) : (
+                  <Typography variant="h3" sx={{ fontWeight: 700, color: card.color }}>
+                    {card.value}
+                  </Typography>
+                )}
+                {card.clickable && !loading && (
+                  <Typography variant="caption" sx={{ color: '#4A7A73', textDecoration: 'underline' }}>
+                    Click to view history →
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </Box>
 
         {/* Add Asset Form - Admin Only */}
@@ -205,9 +205,9 @@ function Dashboard() {
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="cpuUsage" fill="#1E2E2C" name="CPU %" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="memoryUsage" fill="#4A7A73" name="Memory %" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="diskUsage" fill="#A9BFB9" name="Disk %" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="cpuUsage" fill="#1E2E2C" name="CPU %" radius={[3, 3, 0, 0]} isAnimationActive={true} animationDuration={1000} />
+                <Bar dataKey="memoryUsage" fill="#4A7A73" name="Memory %" radius={[3, 3, 0, 0]} isAnimationActive={true} animationDuration={1000} />
+                <Bar dataKey="diskUsage" fill="#A9BFB9" name="Disk %" radius={[3, 3, 0, 0]} isAnimationActive={true} animationDuration={1000} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -245,7 +245,7 @@ function Dashboard() {
             </Box>
 
             <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#607068' }}>
-              Showing {filteredAssets.length} of {assets.length} assets
+              Showing {loading ? <Skeleton width={20} display="inline-block" /> : filteredAssets.length} of {loading ? <Skeleton width={20} display="inline-block" /> : assets.length} assets
             </Typography>
 
             <TableContainer component={Paper} elevation={0}>
@@ -272,7 +272,7 @@ function Dashboard() {
                         <TableCell>{asset.diskUsage}</TableCell>
                         <TableCell>{asset.networkUsage}</TableCell>
                         <TableCell>
-                          <Chip label={asset.assetStatus} size="small" sx={{ bgcolor: sc.bg, color: sc.text, fontWeight: 600 }} />
+                          <Chip label={asset.assetStatus} size="small" sx={{ background: sc.bg, color: sc.text, border: `1px solid ${sc.border}`, fontWeight: 600, boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }} />
                         </TableCell>
                         {isAdmin && (
                           <TableCell align="right">
@@ -282,7 +282,13 @@ function Dashboard() {
                       </TableRow>
                     );
                   })}
-                  {filteredAssets.length === 0 && (
+                  {loading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <TableRow key={`skeleton-${i}`}>
+                        <TableCell colSpan={10}><Skeleton animation="wave" height={35} /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : filteredAssets.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={10} align="center" sx={{ color: '#8A9A95', py: 3 }}>
                         No assets match your search/filter.

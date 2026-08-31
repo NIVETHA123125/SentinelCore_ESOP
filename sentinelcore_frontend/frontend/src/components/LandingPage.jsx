@@ -120,7 +120,9 @@ const LandingPage = () => {
                 lineHeight: 1.1,
                 mb: 4, 
                 letterSpacing: '-0.03em', 
-                color: themeColors.textLight 
+                background: `linear-gradient(135deg, #A5D6A7 0%, ${themeColors.primary} 100%)`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
               }}
             >
               Cloud Security Monitoring System
@@ -235,6 +237,46 @@ const LandingPage = () => {
           ))}
         </Box>
       </Container>
+
+      {/* Footer / Trust Section */}
+      <Box 
+        sx={{ 
+          borderTop: `1px solid ${themeColors.borderColor}`, 
+          bgcolor: '#182422',
+          py: 6,
+          mt: 4,
+          textAlign: 'center'
+        }}
+      >
+        <Container maxWidth="lg">
+          <Typography 
+            sx={{ 
+              fontFamily: fonts.mono, 
+              color: themeColors.primary, 
+              fontSize: '0.9rem',
+              letterSpacing: '0.1em',
+              mb: 3
+            }}
+          >
+            TRUSTED INFRASTRUCTURE MONITORING
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 4, opacity: 0.6, flexWrap: 'wrap' }}>
+            <Typography sx={{ fontFamily: fonts.sans, fontWeight: 600 }}>Zero-Downtime Design</Typography>
+            <Typography sx={{ fontFamily: fonts.sans, fontWeight: 600 }}>End-to-End Encryption</Typography>
+            <Typography sx={{ fontFamily: fonts.sans, fontWeight: 600 }}>Real-Time Intelligence</Typography>
+          </Box>
+          <Typography 
+            sx={{ 
+              fontFamily: fonts.sans, 
+              color: themeColors.textMuted, 
+              fontSize: '0.85rem',
+              mt: 6
+            }}
+          >
+            &copy; {new Date().getFullYear()} SentinelCore Security Systems. All rights reserved.
+          </Typography>
+        </Container>
+      </Box>
     </Box>
   );
 };
