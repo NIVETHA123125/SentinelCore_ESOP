@@ -100,14 +100,6 @@ function Dashboard() {
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
-              onClick={() => navigate('/alerts')}
-              sx={{ color: '#EEF2F1', borderColor: '#4A7A73' }}
-              variant="outlined"
-              size="small"
-            >
-              Alert History
-            </Button>
-            <Button
               onClick={logoutUser}
               sx={{ color: '#EEF2F1', borderColor: '#4A7A73' }}
               variant="outlined"
@@ -126,7 +118,7 @@ function Dashboard() {
           {[
             { label: 'Total Assets', value: summary.totalAssets, color: '#1E2E2C', clickable: false },
             { label: 'Uptime', value: `${summary.uptimePercent}%`, color: '#2E7D32', clickable: false },
-            { label: 'Active Alerts', value: summary.activeAlerts, color: summary.activeAlerts > 0 ? '#C62828' : 'inherit', clickable: true }
+            { label: 'Active Alerts', value: summary.activeAlerts, color: summary.activeAlerts > 0 ? '#C62828' : 'inherit', clickable: false }
           ].map((card, idx) => (
             <Card
               key={idx}
