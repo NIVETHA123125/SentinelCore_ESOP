@@ -23,19 +23,19 @@ public class HealthMonitorService {
         List<InfrastructureAsset> assets = assetRepository.findAll();
 
         for (InfrastructureAsset asset : assets) {
-            String status = com.sentinelcore.sentinelcore_backend.util.AssetStatusEvaluator.evaluateStatus(asset.getCpuUsage(), asset.getMemoryUsage());
+            String status = com.sentinelcore.sentinelcore_backend.util.AssetStatusEvaluator.evaluateStatus(asset.getCpuUsage(), asset.getMemoryUsage(), asset.getDiskUsage());
             asset.setAssetStatus(status);
 
             if ("CRITICAL".equals(status)) {
                 alertService.createAlert(
                         asset.getId(),
                         "CRITICAL",
-                        "Asset metrics reached critical thresholds. CPU: " + asset.getCpuUsage() + "%, Mem: " + asset.getMemoryUsage() + "%");
+                        "Asset metrics reached critical thresholds. CPU: " + asset.getCpuUsage() + "%, Mem: " + asset.getMemoryUsage() + "%, Disk: " + asset.getDiskUsage() + "%");
             } else if ("WARNING".equals(status)) {
                 alertService.createAlert(
                         asset.getId(),
                         "MEDIUM",
-                        "Asset metrics reached warning thresholds. CPU: " + asset.getCpuUsage() + "%, Mem: " + asset.getMemoryUsage() + "%");
+                        "Asset metrics reached warning thresholds. CPU: " + asset.getCpuUsage() + "%, Mem: " + asset.getMemoryUsage() + "%, Disk: " + asset.getDiskUsage() + "%");
             }
 
             assetRepository.save(asset);

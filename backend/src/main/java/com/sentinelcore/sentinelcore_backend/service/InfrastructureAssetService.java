@@ -1,6 +1,7 @@
 package com.sentinelcore.sentinelcore_backend.service;
 
 import com.sentinelcore.sentinelcore_backend.dto.InfrastructureAssetDTO;
+import com.sentinelcore.sentinelcore_backend.entity.Alert;
 import com.sentinelcore.sentinelcore_backend.entity.InfrastructureAsset;
 import com.sentinelcore.sentinelcore_backend.repository.AlertRepository;
 import com.sentinelcore.sentinelcore_backend.repository.InfrastructureAssetRepository;
@@ -23,6 +24,9 @@ public class InfrastructureAssetService {
     @Autowired
     private AlertRepository alertRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
 
     public List<InfrastructureAssetDTO> getAllAssets() {
         return assetRepository.findAll().stream()
@@ -39,7 +43,7 @@ public class InfrastructureAssetService {
 
 
     public InfrastructureAssetDTO createAsset(InfrastructureAssetDTO dto) {
-        String calculatedStatus = com.sentinelcore.sentinelcore_backend.util.AssetStatusEvaluator.evaluateStatus(dto.getCpuUsage(), dto.getMemoryUsage());
+        String calculatedStatus = com.sentinelcore.sentinelcore_backend.util.AssetStatusEvaluator.evaluateStatus(dto.getCpuUsage(), dto.getMemoryUsage(), dto.getDiskUsage());
         InfrastructureAsset asset = InfrastructureAsset.builder()
                 .assetName(dto.getAssetName())
                 .assetType(dto.getAssetType())
@@ -83,7 +87,7 @@ public class InfrastructureAssetService {
         asset.setDiskUsage(dto.getDiskUsage());
         asset.setNetworkUsage(dto.getNetworkUsage());
         
-        String calculatedStatus = com.sentinelcore.sentinelcore_backend.util.AssetStatusEvaluator.evaluateStatus(dto.getCpuUsage(), dto.getMemoryUsage());
+        String calculatedStatus = com.sentinelcore.sentinelcore_backend.util.AssetStatusEvaluator.evaluateStatus(dto.getCpuUsage(), dto.getMemoryUsage(), dto.getDiskUsage());
         asset.setAssetStatus(calculatedStatus);
         
         InfrastructureAsset updated = assetRepository.save(asset);
@@ -106,11 +110,45 @@ public class InfrastructureAssetService {
                 .collect(Collectors.toList());
     }
 
+    public InfrastructureAssetDTO resolveCriticalAlerts(Long assetId) {
+        InfrastructureAsset asset = assetRepository.findById(assetId)
+                .orElseThrow(() -> new RuntimeException("Asset not found with id: " + assetId));
+
+        // Find all OPEN CRITICAL alerts for this asset and resolve them
+        List<Alert> openCriticalAlerts = alertRepository.findByAssetIdAndSeverityAndStatus(
+                assetId, Alert.AlertSeverity.CRITICAL, Alert.AlertStatus.OPEN);
+
+        for (Alert alert : openCriticalAlerts) {
+            alert.setStatus(Alert.AlertStatus.RESOLVED);
+            alert.setResolvedAt(LocalDateTime.now());
+            alertRepository.save(alert);
+        }
+
+        // Reset CPU, memory, and disk so HealthMonitorService won't override status back to CRITICAL
+        asset.setCpuUsage(0.0);
+        asset.setMemoryUsage(0.0);
+        asset.setDiskUsage(0.0);
+
+        // Change asset status from CRITICAL to ONLINE
+        asset.setAssetStatus("ONLINE");
+        assetRepository.save(asset);
+
+        // Always send cleared email when admin resolves a critical asset
+        notificationService.sendAlertClearedEmail(
+                "mynew222028@gmail.com",
+                asset.getAssetName(),
+                "CRITICAL",
+                "Critical alert has been resolved. Asset is now back to ONLINE status."
+        );
+
+        return toDTO(asset);
+    }
+
     public DashboardSummaryDTO getDashboardSummary() {
         List<InfrastructureAssetDTO> all = getAllAssets();
         long total = all.size();
-        long up = all.stream().filter(a -> "UP".equalsIgnoreCase(a.getAssetStatus())).count();
-        long alerts = all.stream().filter(a -> !"UP".equalsIgnoreCase(a.getAssetStatus())).count();
+        long up = all.stream().filter(a -> "UP".equalsIgnoreCase(a.getAssetStatus()) || "ONLINE".equalsIgnoreCase(a.getAssetStatus())).count();
+        long alerts = all.stream().filter(a -> !"UP".equalsIgnoreCase(a.getAssetStatus()) && !"ONLINE".equalsIgnoreCase(a.getAssetStatus())).count();
         double uptimePercent = total == 0 ? 0 : (up * 100.0 / total);
         return new DashboardSummaryDTO(total, Math.round(uptimePercent * 100.0) / 100.0, alerts);
     }

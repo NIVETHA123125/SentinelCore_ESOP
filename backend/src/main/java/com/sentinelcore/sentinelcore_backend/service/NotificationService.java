@@ -78,4 +78,29 @@ public class NotificationService {
             log.error("Failed to send alert SMS: {}", e.getMessage(), e);
         }
     }
+
+    public void sendAlertClearedEmail(String toEmail, String assetName, String severity, String message) {
+        try {
+            SimpleMailMessage mail = new SimpleMailMessage();
+            mail.setFrom(fromEmail);
+            mail.setTo(toEmail);
+            String formattedMessage = "Respected Sir/Madam,\n\n" +
+                    "A critical alert has been RESOLVED for one of your infrastructure assets.\n\n" +
+                    "Asset Name: " + assetName + "\n" +
+                    "Previous Severity: " + severity + "\n" +
+                    "Alert Details: " + message + "\n" +
+                    "Current Status: ONLINE\n\n" +
+                    "The asset is now back to normal operation.\n\n" +
+                    "Please check the SentinelCore dashboard for more information.\n\n" +
+                    "Thank you,\n" +
+                    "SentinelCore Monitoring System";
+
+            mail.setSubject("[SentinelCore] RESOLVED: " + severity + " Alert Cleared - " + assetName);
+            mail.setText(formattedMessage);
+            mailSender.send(mail);
+            log.info("Alert cleared email sent to {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send alert cleared email: {}", e.getMessage(), e);
+        }
+    }
 }

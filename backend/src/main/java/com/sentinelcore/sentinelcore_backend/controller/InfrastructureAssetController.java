@@ -58,6 +58,12 @@ public class InfrastructureAssetController {
         return assetService.getAssetsByStatus(assetStatus);
     }
 
+    @PutMapping("/{id}/resolve-critical")
+    @PreAuthorize("hasRole('ADMIN')")
+    public InfrastructureAssetDTO resolveCriticalAlerts(@PathVariable Long id) {
+        return assetService.resolveCriticalAlerts(id);
+    }
+
     @GetMapping("/{id}")
     public InfrastructureAssetDTO getAssetById(@PathVariable Long id) {
         return assetService.getAssetById(id);
