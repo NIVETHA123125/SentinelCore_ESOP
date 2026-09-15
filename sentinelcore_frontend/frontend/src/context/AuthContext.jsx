@@ -8,6 +8,19 @@ export const AuthProvider = ({ children }) => {
   const [accessToken, setAccessToken] = useState(() => Cookies.get('accessToken') || null);
   const [refreshToken, setRefreshToken] = useState(() => Cookies.get('refreshToken') || null);
   
+  const [username, setUsername] = useState(() => {
+    const token = Cookies.get('accessToken');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        return decoded.sub || decoded.username || 'admin';
+      } catch (e) {
+        console.error("Invalid token on load");
+      }
+    }
+    return null;
+  });
+
   const [role, setRole] = useState(() => {
     const token = Cookies.get('accessToken');
     if (token) {
@@ -43,6 +56,7 @@ export const AuthProvider = ({ children }) => {
       const decoded = jwtDecode(access);
       setRole(decoded.role);
       setIsAdmin(decoded.role === 'ROLE_ADMIN');
+      setUsername(decoded.sub || decoded.username || 'admin');
     } catch (e) {
       console.error("Invalid token during login");
     }
@@ -53,13 +67,14 @@ export const AuthProvider = ({ children }) => {
     setRefreshToken(null);
     setRole(null);
     setIsAdmin(false);
+    setUsername(null);
     
     Cookies.remove('accessToken');
     Cookies.remove('refreshToken');
   };
 
   return (
-    <AuthContext.Provider value={{ accessToken, refreshToken, role, isAdmin, loginUser, logoutUser }}>
+    <AuthContext.Provider value={{ accessToken, refreshToken, username, role, isAdmin, loginUser, logoutUser }}>
       {children}
     </AuthContext.Provider>
   );

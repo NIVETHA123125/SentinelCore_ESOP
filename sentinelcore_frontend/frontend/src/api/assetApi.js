@@ -1,6 +1,7 @@
 import api from './axiosConfig';
 
-const API_BASE = 'http://localhost:8080/api/assets';
+const BASE_HOST = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_BASE = `${BASE_HOST}/api/assets`;
 
 export const getAllAssets = () => api.get(API_BASE);
 export const getDashboardSummary = () => api.get(`${API_BASE}/dashboard/summary`);

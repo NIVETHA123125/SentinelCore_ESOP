@@ -1,534 +1,572 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Container, Typography, TextField, Button, Grid, Card, CardContent,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Chip, AppBar, Toolbar,
-  MenuItem, Select, InputLabel, FormControl,
-  Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, IconButton
+  Typography, Button, Grid, Card, Box, Chip,
+  Skeleton, IconButton, LinearProgress, Tooltip, Stack
 } from '@mui/material';
-import ShieldIcon from '@mui/icons-material/Shield';
-import EditIcon from '@mui/icons-material/Edit';
-import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { getAllAssets, getDashboardSummary, createAsset, deleteAsset, resolveCriticalAsset, updateAsset } from '../api/assetApi';
-import AlertNotifier from './AlertNotifier';
+import DnsIcon from '@mui/icons-material/Dns';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutlined';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { getAllAssets, getDashboardSummary } from '../api/assetApi';
+import { getAllAlerts } from '../api/alertApi';
+import Sidebar from './Sidebar';
+import TopHeader from './TopHeader';
 import { useAuth } from '../context/AuthContext';
 
-const statusColor = (status) => {
+const statusBadgeStyle = (status) => {
   switch (status?.toUpperCase()) {
-    case 'ONLINE': case 'UP': return { bg: '#1B5E20', text: '#A5D6A7', border: '#2E7D32' };
-    case 'WARNING': return { bg: '#7A4F01', text: '#FFCC80', border: '#F57C00' };
-    case 'CRITICAL': case 'DOWN': return { bg: '#C62828', text: '#FFCDD2', border: '#E53935' };
-    default: return { bg: '#37474F', text: '#CFD8DC', border: '#546E7A' };
+    case 'ONLINE': case 'UP':
+      return { bg: '#ECFDF5', text: '#059669', border: '#A7F3D0' };
+    case 'WARNING':
+      return { bg: '#FFFBEB', text: '#D97706', border: '#FDE68A' };
+    case 'CRITICAL': case 'DOWN':
+      return { bg: '#FEF2F2', text: '#DC2626', border: '#FECACA' };
+    default:
+      return { bg: '#F8FAFC', text: '#64748B', border: '#E2E8F0' };
   }
 };
 
-function Dashboard() {
+export default function Dashboard() {
   const navigate = useNavigate();
-  const { isAdmin, logoutUser } = useAuth();
+  const { isAdmin } = useAuth();
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [summary, setSummary] = useState({ totalAssets: 0, uptimePercent: 0, activeAlerts: 0 });
-  const [formData, setFormData] = useState({
-    assetName: '', assetType: '', ipAddress: '',
-    cpuUsage: '', memoryUsage: '', diskUsage: '', networkUsage: '', assetStatus: ''
-  });
-
-  // --- Search / filter state ---
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-
-  // --- Delete confirmation state ---
-  const [confirmDelete, setConfirmDelete] = useState(null);
-
-  // --- Inline edit state: { assetId, field, value } ---
-  const [editingCell, setEditingCell] = useState(null);
+  const [openAlertsCount, setOpenAlertsCount] = useState(0);
 
   const fetchAssets = () => {
-    getAllAssets()
-      .then((response) => { setAssets(response.data); setLoading(false); })
-      .catch((err) => { setError(err.message); setLoading(false); });
-  };
-
-  useEffect(() => { fetchAssets(); }, []);
-  useEffect(() => { getDashboardSummary().then((res) => setSummary(res.data)); }, [assets]);
-
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const cpu = parseFloat(formData.cpuUsage) || 0;
-    const mem = parseFloat(formData.memoryUsage) || 0;
-    const disk = parseFloat(formData.diskUsage) || 0;
-
-    let initialStatus = formData.assetStatus;
-    if (!initialStatus) {
-      if (cpu >= 90 || mem >= 90 || disk >= 90) {
-        initialStatus = 'CRITICAL';
-      } else if (cpu >= 70 || mem >= 70 || disk >= 70) {
-        initialStatus = 'WARNING';
-      } else {
-        initialStatus = 'ONLINE';
-      }
-    }
-
-    createAsset({ ...formData, assetStatus: initialStatus })
-      .then(() => {
-        setFormData({ assetName: '', assetType: '', ipAddress: '', cpuUsage: '', memoryUsage: '', diskUsage: '', networkUsage: '', assetStatus: '' });
-        fetchAssets();
+    return getAllAssets()
+      .then((response) => {
+        setAssets(response.data || []);
+        setLoading(false);
       })
-      .catch((err) => alert('Error creating asset: ' + (err.response?.data?.message || err.message)));
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
   };
 
-  const requestDelete = (asset) => setConfirmDelete(asset);
-
-  const confirmDeleteAsset = () => {
-    if (!confirmDelete) return;
-    deleteAsset(confirmDelete.id)
-      .then(() => { fetchAssets(); setConfirmDelete(null); })
-      .catch((err) => { alert('Error deleting asset: ' + (err.response?.data?.message || err.message)); setConfirmDelete(null); });
+  const fetchSummaryAndAlerts = () => {
+    const p1 = getDashboardSummary().then((res) => setSummary(res.data)).catch(() => {});
+    const p2 = getAllAlerts().then((res) => {
+      const openOnes = (res.data || []).filter((a) => a.status?.toUpperCase() === 'OPEN');
+      setOpenAlertsCount(openOnes.length);
+    }).catch(() => {});
+    return Promise.all([p1, p2]);
   };
 
-  const handleResolveCritical = (assetId) => {
-    resolveCriticalAsset(assetId)
-      .then(() => {
-        fetchAssets();
-      })
-      .catch((err) => alert('Error resolving alert: ' + (err.response?.data?.message || err.message)));
-  };
+  useEffect(() => {
+    fetchAssets();
+    fetchSummaryAndAlerts();
+  }, []);
 
-  const startEditing = (assetId, field, currentValue) => {
-    setEditingCell({ assetId, field, value: currentValue ?? '' });
-  };
+  // --- Calculations ---
+  const totalAssetsCount = assets.length;
+  const onlineAssetsCount = assets.filter((a) => (a.assetStatus || '').toUpperCase() === 'ONLINE' || (a.assetStatus || '').toUpperCase() === 'UP').length;
+  const offlineAssetsCount = assets.filter((a) => {
+    const s = (a.assetStatus || '').toUpperCase();
+    return s === 'CRITICAL' || s === 'WARNING' || s === 'DOWN';
+  }).length;
+  const criticalAlertsCount = openAlertsCount || summary.activeAlerts || 0;
 
-  const cancelEditing = () => setEditingCell(null);
+  const avgCpu = totalAssetsCount > 0
+    ? (assets.reduce((acc, curr) => acc + (parseFloat(curr.cpuUsage) || 0), 0) / totalAssetsCount).toFixed(2)
+    : '0.00';
 
-  const handleEditSave = (asset) => {
-    if (!editingCell) return;
+  const avgMem = totalAssetsCount > 0
+    ? (assets.reduce((acc, curr) => acc + (parseFloat(curr.memoryUsage) || 0), 0) / totalAssetsCount).toFixed(2)
+    : '0.00';
 
-    const cpu = editingCell.field === 'cpuUsage' ? (parseFloat(editingCell.value) || 0) : (asset.cpuUsage ?? 0);
-    const mem = editingCell.field === 'memoryUsage' ? (parseFloat(editingCell.value) || 0) : (asset.memoryUsage ?? 0);
-    const disk = editingCell.field === 'diskUsage' ? (parseFloat(editingCell.value) || 0) : (asset.diskUsage ?? 0);
+  const uptimePercentage = totalAssetsCount > 0
+    ? ((onlineAssetsCount / totalAssetsCount) * 100).toFixed(2)
+    : (summary.uptimePercent ? summary.uptimePercent.toFixed(2) : '100.00');
 
-    let calculatedStatus = 'ONLINE';
-    if (cpu >= 90 || mem >= 90 || disk >= 90) {
-      calculatedStatus = 'CRITICAL';
-    } else if (cpu >= 70 || mem >= 70 || disk >= 70) {
-      calculatedStatus = 'WARNING';
-    }
+  const recentAssets = [...assets].slice(-4).reverse();
 
-    const updatedData = {
-      assetName: asset.assetName,
-      assetType: asset.assetType,
-      ipAddress: asset.ipAddress,
-      cpuUsage: cpu,
-      memoryUsage: mem,
-      diskUsage: disk,
-      networkUsage: asset.networkUsage,
-      assetStatus: calculatedStatus
-    };
+  const chartData = assets.map((a) => ({
+    name: a.assetName,
+    CPU: a.cpuUsage,
+    Memory: a.memoryUsage,
+    Disk: a.diskUsage,
+  }));
 
-    updateAsset(asset.id, updatedData)
-      .then(() => {
-        setEditingCell(null);
-        fetchAssets();
-      })
-      .catch((err) => alert('Error updating asset: ' + (err.response?.data?.message || err.message)));
-  };
-
-  const filteredAssets = assets.filter((asset) => {
-    const term = searchTerm.trim().toLowerCase();
-    const matchesSearch =
-      term === '' ||
-      asset.assetName?.toLowerCase().includes(term) ||
-      asset.assetType?.toLowerCase().includes(term) ||
-      asset.ipAddress?.toLowerCase().includes(term);
-
-    const matchesStatus =
-      statusFilter === 'ALL' || asset.assetStatus?.toUpperCase() === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  if (error) return <Typography sx={{ p: 3 }} color="error">Error: {error}</Typography>;
+  if (error) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography color="error">Error loading dashboard: {error}</Typography>
+        <Button onClick={fetchAssets} sx={{ mt: 2 }} variant="outlined">Retry</Button>
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={{ bgcolor: '#EEF2F1', minHeight: '100vh' }}>
-      <AlertNotifier />
-      <AppBar position="static" sx={{ bgcolor: '#1E2E2C' }} elevation={0}>
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box
+    <Box sx={{ display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', bgcolor: '#F8FAFA' }}>
+      <Sidebar />
+
+      {/* Main Content Area */}
+      <Box sx={{ flex: 1, height: '100vh', overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        {/* Top Header Bar */}
+        <TopHeader
+          breadcrumb="Security Dashboard"
+          onRefresh={() => Promise.all([fetchAssets(), fetchSummaryAndAlerts()])}
+        />
+
+        {/* Page Container */}
+        <Box sx={{ p: { xs: 2.5, md: 3.5 }, maxWidth: 1200, width: '100%', mx: 'auto', boxSizing: 'border-box' }}>
+          {/* Overview Header */}
+          <Box sx={{ position: 'relative', mb: 3.5, textAlign: 'center' }}>
+            <Typography
+              variant="caption"
               sx={{
-                width: 36,
-                height: 36,
-                borderRadius: 1.5,
-                bgcolor: 'rgba(74, 122, 115, 0.2)',
-                border: '1px solid rgba(74, 122, 115, 0.4)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                fontWeight: 700,
+                color: '#0F766E',
+                letterSpacing: '0.12em',
+                fontSize: '0.68rem',
+                textTransform: 'uppercase',
+                display: 'block',
+                mb: 0.4,
               }}
             >
-              <ShieldIcon sx={{ fontSize: 22, color: '#4A7A73' }} />
-            </Box>
-            <Box>
-              <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0.5, lineHeight: 1.2 }}>
-                SentinelCore
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#9FB8B3', fontFamily: 'monospace' }}>
-                Cloud Security & Infrastructure Monitoring
-              </Typography>
+              OVERVIEW
+            </Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                color: '#0F172A',
+                letterSpacing: '-0.02em',
+                fontSize: '1.65rem',
+                lineHeight: 1.2,
+                mb: 0.5,
+              }}
+            >
+              Security Dashboard
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.84rem' }}>
+              Monitor your cloud infrastructure health and security posture.
+            </Typography>
+
+            {/* Time Filter Pill on Right */}
+            <Box sx={{ position: { xs: 'static', md: 'absolute' }, right: 0, top: '50%', transform: { md: 'translateY(-50%)' }, mt: { xs: 1.5, md: 0 }, display: 'inline-block' }}>
+              <Chip
+                icon={<AccessTimeIcon sx={{ fontSize: '14px !important', color: '#64748B !important' }} />}
+                label="Last 24 hours"
+                size="small"
+                variant="outlined"
+                sx={{
+                  borderColor: '#E2E8F0',
+                  bgcolor: '#FFFFFF',
+                  color: '#475569',
+                  fontWeight: 500,
+                  fontSize: '0.75rem',
+                  height: 28,
+                  px: 0.5,
+                  borderRadius: '6px',
+                }}
+              />
             </Box>
           </Box>
-          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-            {isAdmin ? (
-              <Chip
-                label="ADMIN"
-                size="small"
-                sx={{
-                  bgcolor: '#B08D57',
-                  color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: '0.68rem',
-                  letterSpacing: '0.06em',
-                  height: 24,
-                  '& .MuiChip-label': { px: 1 },
-                }}
-              />
-            ) : (
-              <Chip
-                label="VIEWER"
-                size="small"
-                sx={{
-                  bgcolor: 'rgba(74, 122, 115, 0.25)',
-                  color: '#EEF2F1',
-                  fontWeight: 600,
-                  fontSize: '0.68rem',
-                  letterSpacing: '0.06em',
-                  height: 24,
-                  border: '1px solid rgba(74, 122, 115, 0.4)',
-                  '& .MuiChip-label': { px: 1 },
-                }}
-              />
-            )}
+
+          {/* Section: Security Overview Title */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 1.4 }}>
+            <Box>
+              <Typography variant="body1" sx={{ fontWeight: 600, color: '#0F172A', fontSize: '0.92rem', lineHeight: 1.2 }}>
+                Security overview
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.74rem' }}>
+                Current status across monitored infrastructure
+              </Typography>
+            </Box>
             <Button
-              onClick={logoutUser}
-              sx={{
-                color: '#EEF2F1',
-                borderColor: '#4A7A73',
-                textTransform: 'none',
-                fontWeight: 600,
-                '&:hover': {
-                  borderColor: '#A5D6A7',
-                  bgcolor: 'rgba(74, 122, 115, 0.15)',
-                },
-              }}
-              variant="outlined"
               size="small"
+              onClick={() => navigate('/assets')}
+              endIcon={<ArrowForwardIcon sx={{ fontSize: '13px !important' }} />}
+              sx={{
+                color: '#0F766E',
+                fontWeight: 600,
+                textTransform: 'none',
+                fontSize: '0.78rem',
+                p: 0,
+                '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
+              }}
             >
-              Logout
+              View all assets
             </Button>
           </Box>
-        </Toolbar>
-      </AppBar>
 
-      <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, sm: 3, md: 8 } }}>
-
-        {/* Summary Cards */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 4, flexWrap: 'wrap' }}>
-          {[
-            { label: 'Total Assets', value: summary.totalAssets, color: '#1E2E2C', clickable: false },
-            { label: 'Uptime', value: `${summary.uptimePercent}%`, color: '#2E7D32', clickable: false },
-            { label: 'Active Alerts', value: summary.activeAlerts, color: summary.activeAlerts > 0 ? '#C62828' : 'inherit', clickable: false }
-          ].map((card, idx) => (
+          {/* 4 Stat Cards */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2, mb: 3, width: '100%' }}>
+            {/* Card 1: TOTAL ASSETS */}
             <Card
-              key={idx}
               elevation={0}
-              onClick={card.clickable ? () => navigate('/alerts') : undefined}
+              onClick={() => navigate('/assets')}
               sx={{
-                border: '1px solid #D8E0DE',
-                borderRadius: 2,
-                width: 220,
-                cursor: card.clickable ? 'pointer' : 'default',
+                borderRadius: '10px',
+                border: '1px solid #E2E8F0',
+                bgcolor: '#FFFFFF',
+                p: 2.2,
+                textAlign: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
                 transition: 'transform 0.15s, box-shadow 0.15s',
-                '&:hover': card.clickable ? { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' } : {}
+                '&:hover': { transform: 'translateY(-1px)', boxShadow: '0 3px 8px rgba(0,0,0,0.05)' },
               }}
             >
-              <CardContent>
-                <Typography variant="overline" color="text.secondary">{card.label}</Typography>
-                {loading ? (
-                  <Skeleton variant="text" width="60%" height={60} />
-                ) : (
-                  <Typography variant="h3" sx={{ fontWeight: 700, color: card.color }}>
-                    {card.value}
-                  </Typography>
-                )}
-                {card.clickable && !loading && (
-                  <Typography variant="caption" sx={{ color: '#4A7A73', textDecoration: 'underline' }}>
-                    Click to view history →
-                  </Typography>
-                )}
-              </CardContent>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', letterSpacing: '0.05em', fontSize: '0.68rem', textTransform: 'uppercase' }}>
+                TOTAL ASSETS
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: '#0F172A', my: 0.5, fontSize: '1.75rem' }}>
+                {loading ? <Skeleton width={50} sx={{ mx: 'auto' }} /> : totalAssetsCount}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', fontSize: '0.72rem' }}>
+                All monitored infrastructure
+              </Typography>
             </Card>
-          ))}
-        </Box>
 
-        {/* Add Asset Form - Admin Only */}
-        {isAdmin && (
-          <Card elevation={0} sx={{ mb: 4, border: '1px solid #D8E0DE', borderRadius: 2 }}>
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 3, color: '#1E2E2C' }}>
-              Register New Asset
-            </Typography>
-            <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', maxWidth: 900 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={4}><TextField fullWidth size="small" label="Asset Name" name="assetName" value={formData.assetName} onChange={handleChange} required /></Grid>
-                <Grid item xs={12} sm={4}><TextField fullWidth size="small" label="Asset Type" name="assetType" value={formData.assetType} onChange={handleChange} /></Grid>
-                <Grid item xs={12} sm={4}><TextField fullWidth size="small" label="IP Address" name="ipAddress" value={formData.ipAddress} onChange={handleChange} sx={{ '& input': { fontFamily: 'monospace' } }} /></Grid>
-                <Grid item xs={6} sm={3}><TextField fullWidth size="small" type="number" label="CPU %" name="cpuUsage" value={formData.cpuUsage} onChange={handleChange} /></Grid>
-                <Grid item xs={6} sm={3}><TextField fullWidth size="small" type="number" label="Memory %" name="memoryUsage" value={formData.memoryUsage} onChange={handleChange} /></Grid>
-                <Grid item xs={6} sm={3}><TextField fullWidth size="small" type="number" label="Disk %" name="diskUsage" value={formData.diskUsage} onChange={handleChange} /></Grid>
-                <Grid item xs={6} sm={3}><TextField fullWidth size="small" type="number" label="Network" name="networkUsage" value={formData.networkUsage} onChange={handleChange} /></Grid>
-                <Grid item xs={12}><TextField fullWidth size="small" label="Status (ONLINE/WARNING/CRITICAL)" name="assetStatus" value={formData.assetStatus} onChange={handleChange} /></Grid>
-              </Grid>
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                <Button
-                  variant="contained"
-                  type="submit"
-                  sx={{ bgcolor: '#2F4F4B', px: 6, py: 1.2, '&:hover': { bgcolor: '#3D615C' } }}
-                >
-                  Add Asset
-                </Button>
-              </Box>
-            </Box>
-            </CardContent>
-          </Card>
-        )}
+            {/* Card 2: ONLINE ASSETS */}
+            <Card
+              elevation={0}
+              onClick={() => navigate('/assets')}
+              sx={{
+                borderRadius: '10px',
+                border: '1px solid #E2E8F0',
+                bgcolor: '#FFFFFF',
+                p: 2.2,
+                textAlign: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+                '&:hover': { transform: 'translateY(-1px)', boxShadow: '0 3px 8px rgba(0,0,0,0.05)' },
+              }}
+            >
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', letterSpacing: '0.05em', fontSize: '0.68rem', textTransform: 'uppercase' }}>
+                ONLINE ASSETS
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: '#16A34A', my: 0.5, fontSize: '1.75rem' }}>
+                {loading ? <Skeleton width={50} sx={{ mx: 'auto' }} /> : onlineAssetsCount}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', fontSize: '0.72rem' }}>
+                Currently operational
+              </Typography>
+            </Card>
 
-        {/* Usage Chart - Visible to all roles */}
-        <Card elevation={0} sx={{ mb: 4, border: '1px solid #D8E0DE', borderRadius: 2 }}>
-          <CardContent>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#1E2E2C', textAlign: 'center' }}>
-              Resource Usage by Asset
-            </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={assets}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5EAE9" />
-                <XAxis dataKey="assetName" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="cpuUsage" fill="#1E2E2C" name="CPU %" radius={[3, 3, 0, 0]} isAnimationActive={true} animationDuration={1000} />
-                <Bar dataKey="memoryUsage" fill="#4A7A73" name="Memory %" radius={[3, 3, 0, 0]} isAnimationActive={true} animationDuration={1000} />
-                <Bar dataKey="diskUsage" fill="#A9BFB9" name="Disk %" radius={[3, 3, 0, 0]} isAnimationActive={true} animationDuration={1000} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+            {/* Card 3: OFFLINE ASSETS */}
+            <Card
+              elevation={0}
+              onClick={() => navigate('/assets')}
+              sx={{
+                borderRadius: '10px',
+                border: '1px solid #E2E8F0',
+                bgcolor: '#FFFFFF',
+                p: 2.2,
+                textAlign: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+                '&:hover': { transform: 'translateY(-1px)', boxShadow: '0 3px 8px rgba(0,0,0,0.05)' },
+              }}
+            >
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', letterSpacing: '0.05em', fontSize: '0.68rem', textTransform: 'uppercase' }}>
+                OFFLINE ASSETS
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: offlineAssetsCount > 0 ? '#D97706' : '#0F172A', my: 0.5, fontSize: '1.75rem' }}>
+                {loading ? <Skeleton width={50} sx={{ mx: 'auto' }} /> : offlineAssetsCount}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', fontSize: '0.72rem' }}>
+                Currently degraded/offline
+              </Typography>
+            </Card>
 
-        {/* Assets Table */}
-        <Card elevation={0} sx={{ border: '1px solid #D8E0DE', borderRadius: 2 }}>
-          <CardContent>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#1E2E2C', textAlign: 'center' }}>
-              Current Assets
-            </Typography>
+            {/* Card 4: CRITICAL ALERTS */}
+            <Card
+              elevation={0}
+              onClick={() => navigate('/alerts')}
+              sx={{
+                borderRadius: '10px',
+                border: '1px solid #E2E8F0',
+                bgcolor: '#FFFFFF',
+                p: 2.2,
+                textAlign: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+                '&:hover': { transform: 'translateY(-1px)', boxShadow: '0 3px 8px rgba(0,0,0,0.05)' },
+              }}
+            >
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', letterSpacing: '0.05em', fontSize: '0.68rem', textTransform: 'uppercase' }}>
+                CRITICAL ALERTS
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: criticalAlertsCount > 0 ? '#DC2626' : '#0F172A', my: 0.5, fontSize: '1.75rem' }}>
+                {loading ? <Skeleton width={50} sx={{ mx: 'auto' }} /> : criticalAlertsCount}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', fontSize: '0.72rem' }}>
+                Requires attention
+              </Typography>
+            </Card>
+          </Box>
 
-            <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
-              <TextField
-                size="small"
-                label="Search by name, type, or IP"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                sx={{ minWidth: 260 }}
-              />
-              <FormControl size="small" sx={{ minWidth: 180 }}>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={statusFilter}
-                  label="Status"
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <MenuItem value="ALL">All Statuses</MenuItem>
-                  <MenuItem value="ONLINE">Online</MenuItem>
-                  <MenuItem value="WARNING">Warning</MenuItem>
-                  <MenuItem value="CRITICAL">Critical</MenuItem>
-                  <MenuItem value="OFFLINE">Offline</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
+          {/* Two Column Layout: System Performance vs Recent Assets */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2.5, mb: 3.5, width: '100%' }}>
+            {/* Left Card: System Performance */}
+            <Card
+              elevation={0}
+              sx={{
+                borderRadius: '10px',
+                border: '1px solid #E2E8F0',
+                bgcolor: '#FFFFFF',
+                p: 2.5,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+              }}
+            >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2.5 }}>
+                  <Box>
+                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#0F172A', fontSize: '0.92rem', lineHeight: 1.2 }}>
+                      System performance
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.74rem' }}>
+                      Aggregated health metrics
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label="• Live"
+                    size="small"
+                    sx={{
+                      bgcolor: '#ECFDF5',
+                      color: '#059669',
+                      border: '1px solid #A7F3D0',
+                      fontWeight: 700,
+                      fontSize: '0.68rem',
+                      height: 20,
+                      px: 0.3,
+                    }}
+                  />
+                </Box>
 
-            <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#607068' }}>
-              Showing {loading ? <Skeleton width={20} display="inline-block" /> : filteredAssets.length} of {loading ? <Skeleton width={20} display="inline-block" /> : assets.length} assets
-            </Typography>
+                {/* Meter 1: System Uptime */}
+                <Box sx={{ mb: 2.2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.6 }}>
+                    <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500, fontSize: '0.8rem' }}>
+                      System uptime
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A', fontSize: '0.82rem', fontFamily: 'monospace' }}>
+                      {uptimePercentage}%
+                    </Typography>
+                  </Box>
+                  <LinearProgress
+                    variant="determinate"
+                    value={Math.min(100, Math.max(0, parseFloat(uptimePercentage) || 0))}
+                    sx={{
+                      height: 5,
+                      borderRadius: 3,
+                      bgcolor: '#F1F5F9',
+                      '& .MuiLinearProgress-bar': { bgcolor: '#16A34A', borderRadius: 3 },
+                    }}
+                  />
+                </Box>
 
-            <TableContainer component={Paper} elevation={0}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ '& th': { fontWeight: 700, bgcolor: '#F5F8F7' } }}>
-                    <TableCell>ID</TableCell>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>IP</TableCell>
-                    <TableCell>CPU %</TableCell>
-                    <TableCell>Memory %</TableCell>
-                    <TableCell>Disk %</TableCell>
-                    <TableCell>Network</TableCell>
-                    <TableCell>Status</TableCell>
-                    {/* Role-gated: Admin sees Resolve & Action (Delete) columns; Viewer sees read-only table */}
-                    {isAdmin && <TableCell align="center">Resolve</TableCell>}
-                    {isAdmin && <TableCell align="right">Action</TableCell>}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredAssets.map((asset) => {
-                    const sc = statusColor(asset.assetStatus);
+                {/* Meter 2: Average CPU Usage */}
+                <Box sx={{ mb: 2.2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.6 }}>
+                    <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500, fontSize: '0.8rem' }}>
+                      Average CPU usage
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A', fontSize: '0.82rem', fontFamily: 'monospace' }}>
+                      {avgCpu}%
+                    </Typography>
+                  </Box>
+                  <LinearProgress
+                    variant="determinate"
+                    value={Math.min(100, Math.max(0, parseFloat(avgCpu) || 0))}
+                    sx={{
+                      height: 5,
+                      borderRadius: 3,
+                      bgcolor: '#F1F5F9',
+                      '& .MuiLinearProgress-bar': { bgcolor: '#0F766E', borderRadius: 3 },
+                    }}
+                  />
+                </Box>
+
+                {/* Meter 3: Average Memory Usage */}
+                <Box sx={{ mb: 0.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.6 }}>
+                    <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500, fontSize: '0.8rem' }}>
+                      Average memory usage
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A', fontSize: '0.82rem', fontFamily: 'monospace' }}>
+                      {avgMem}%
+                    </Typography>
+                  </Box>
+                  <LinearProgress
+                    variant="determinate"
+                    value={Math.min(100, Math.max(0, parseFloat(avgMem) || 0))}
+                    sx={{
+                      height: 5,
+                      borderRadius: 3,
+                      bgcolor: '#F1F5F9',
+                      '& .MuiLinearProgress-bar': { bgcolor: '#D97706', borderRadius: 3 },
+                    }}
+                  />
+                </Box>
+              </Card>
+
+            {/* Right Card: Recent Assets */}
+            <Card
+              elevation={0}
+                sx={{
+                  borderRadius: '10px',
+                  border: '1px solid #E2E8F0',
+                  bgcolor: '#FFFFFF',
+                  p: 2.5,
+                  height: '100%',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Box>
+                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#0F172A', fontSize: '0.92rem', lineHeight: 1.2 }}>
+                      Recent assets
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.74rem' }}>
+                      Latest monitored infrastructure
+                    </Typography>
+                  </Box>
+                  <Button
+                    size="small"
+                    onClick={() => navigate('/assets')}
+                    sx={{ color: '#0F766E', textTransform: 'none', fontSize: '0.75rem', fontWeight: 600, p: 0 }}
+                  >
+                    Manage →
+                  </Button>
+                </Box>
+
+                <Stack spacing={1}>
+                  {recentAssets.map((asset) => {
+                    const badge = statusBadgeStyle(asset.assetStatus);
                     return (
-                      <TableRow key={asset.id} hover>
-                        <TableCell sx={{ fontFamily: 'monospace' }}>{asset.id}</TableCell>
-                        <TableCell sx={{ fontWeight: 500 }}>{asset.assetName}</TableCell>
-                        <TableCell>{asset.assetType}</TableCell>
-                        <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>{asset.ipAddress}</TableCell>
-                        {['cpuUsage', 'memoryUsage', 'diskUsage'].map((field) => (
-                          <TableCell key={field}>
-                            {editingCell && editingCell.assetId === asset.id && editingCell.field === field ? (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <TextField
-                                  size="small"
-                                  type="number"
-                                  value={editingCell.value}
-                                  onChange={(e) => setEditingCell({ ...editingCell, value: e.target.value })}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleEditSave(asset);
-                                    if (e.key === 'Escape') cancelEditing();
-                                  }}
-                                  autoFocus
-                                  sx={{ width: 80, '& input': { py: 0.5, px: 1, fontSize: 13 } }}
-                                />
-                                <IconButton size="small" onClick={() => handleEditSave(asset)} sx={{ color: '#2E7D32' }}>
-                                  <CheckIcon fontSize="small" />
-                                </IconButton>
-                                <IconButton size="small" onClick={cancelEditing} sx={{ color: '#C62828' }}>
-                                  <CloseIcon fontSize="small" />
-                                </IconButton>
-                              </Box>
-                            ) : (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                {asset[field]}
-                                {isAdmin && (
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => startEditing(asset.id, field, asset[field])}
-                                    sx={{ opacity: 0.4, '&:hover': { opacity: 1 }, p: 0.3 }}
-                                  >
-                                    <EditIcon sx={{ fontSize: 15 }} />
-                                  </IconButton>
-                                )}
-                              </Box>
-                            )}
-                          </TableCell>
-                        ))}
-                        <TableCell>{asset.networkUsage}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={asset.assetStatus}
-                            size="small"
+                      <Box
+                        key={asset.id}
+                        onClick={() => navigate('/assets')}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          p: 1.1,
+                          borderRadius: '8px',
+                          bgcolor: '#FFFFFF',
+                          border: '1px solid #F1F5F9',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.15s',
+                          '&:hover': { bgcolor: '#F8FAFC' },
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.4 }}>
+                          <Box
                             sx={{
-                              bgcolor: sc.bg,
-                              color: sc.text,
-                              border: `1px solid ${sc.border}`,
-                              fontWeight: 700,
-                              fontSize: '0.75rem',
-                              boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                              width: 32,
+                              height: 32,
+                              borderRadius: '6px',
+                              bgcolor: '#F1F5F9',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
                             }}
-                          />
-                        </TableCell>
+                          >
+                            <DnsIcon sx={{ color: '#64748B', fontSize: 16 }} />
+                          </Box>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A', fontSize: '0.82rem', lineHeight: 1.2 }}>
+                              {asset.assetName}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.7rem' }}>
+                              {asset.assetType || 'SERVER'} · {asset.ipAddress || 'Cloud'}
+                            </Typography>
+                          </Box>
+                        </Box>
 
-                        {/* Admin-only: Resolve critical alerts button */}
-                        {isAdmin && (
-                          <TableCell align="center">
-                            {asset.assetStatus?.toUpperCase() === 'CRITICAL' ? (
-                              <Button
-                                size="small"
-                                variant="contained"
-                                onClick={() => handleResolveCritical(asset.id)}
-                                sx={{
-                                  bgcolor: '#C62828',
-                                  color: '#FFFFFF',
-                                  fontWeight: 700,
-                                  fontSize: '0.75rem',
-                                  px: 1.5,
-                                  py: 0.4,
-                                  textTransform: 'none',
-                                  boxShadow: 'none',
-                                  '&:hover': { bgcolor: '#B71C1C' }
-                                }}
-                              >
-                                Resolve
-                              </Button>
-                            ) : (asset.assetStatus?.toUpperCase() === 'ONLINE' || asset.assetStatus?.toUpperCase() === 'UP') ? (
-                              <Chip
-                                label="Resolved"
-                                size="small"
-                                sx={{
-                                  bgcolor: '#2E7D32',
-                                  color: '#FFFFFF',
-                                  fontWeight: 600,
-                                  fontSize: '0.75rem'
-                                }}
-                              />
-                            ) : (
-                              <Typography variant="caption" sx={{ color: '#9E9E9E' }}>—</Typography>
-                            )}
-                          </TableCell>
-                        )}
-
-                        {/* Admin-only: Delete asset button */}
-                        {isAdmin && (
-                          <TableCell align="right">
-                            <Button color="error" size="small" onClick={() => requestDelete(asset)}>Delete</Button>
-                          </TableCell>
-                        )}
-                      </TableRow>
+                        <Chip
+                          label={`• ${(asset.assetStatus || 'ONLINE').toUpperCase()}`}
+                          size="small"
+                          sx={{
+                            bgcolor: badge.bg,
+                            color: badge.text,
+                            border: `1px solid ${badge.border}`,
+                            fontWeight: 600,
+                            fontSize: '0.68rem',
+                            height: 22,
+                            px: 0.4,
+                          }}
+                        />
+                      </Box>
                     );
                   })}
-                  {loading ? (
-                    Array.from({ length: 3 }).map((_, i) => (
-                      <TableRow key={`skeleton-${i}`}>
-                        <TableCell colSpan={isAdmin ? 11 : 9}><Skeleton animation="wave" height={35} /></TableCell>
-                      </TableRow>
-                    ))
-                  ) : filteredAssets.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={isAdmin ? 11 : 9} align="center" sx={{ color: '#8A9A95', py: 3 }}>
-                        No assets match your search/filter.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </CardContent>
-        </Card>
-      </Container>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={!!confirmDelete} onClose={() => setConfirmDelete(null)}>
-        <DialogTitle>Delete Asset?</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete <strong>{confirmDelete?.assetName}</strong>? This can't be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDelete(null)}>Cancel</Button>
-          <Button onClick={confirmDeleteAsset} color="error" variant="contained">Delete</Button>
-        </DialogActions>
-      </Dialog>
+                  {recentAssets.length === 0 && (
+                    <Box sx={{ py: 3, textAlign: 'center', color: '#94A3B8' }}>
+                      <Typography variant="caption">No assets currently monitored.</Typography>
+                    </Box>
+                  )}
+                </Stack>
+              </Card>
+          </Box>
+
+          {/* Hardware Distribution Chart */}
+          {chartData.length > 0 && (
+            <Card
+              elevation={0}
+              sx={{
+                borderRadius: '10px',
+                border: '1px solid #E2E8F0',
+                bgcolor: '#FFFFFF',
+                p: 2.5,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                mb: 3,
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                <Box>
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#0F172A', fontSize: '0.92rem', mb: 0.2 }}>
+                    Hardware Resource Distribution
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.74rem' }}>
+                    Comparative CPU, Memory, and Disk metrics across all assets
+                  </Typography>
+                </Box>
+                <Button
+                  size="small"
+                  onClick={() => navigate('/assets')}
+                  endIcon={<ArrowForwardIcon sx={{ fontSize: '13px !important' }} />}
+                  sx={{ color: '#0F766E', textTransform: 'none', fontSize: '0.75rem', fontWeight: 600 }}
+                >
+                  View Table Details
+                </Button>
+              </Box>
+              <Box sx={{ width: '100%', height: 220, minWidth: 0, position: 'relative' }}>
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                    <XAxis dataKey="name" stroke="#94A3B8" fontSize={11} />
+                    <YAxis stroke="#94A3B8" fontSize={11} domain={[0, 100]} />
+                    <RechartsTooltip />
+                    <Legend wrapperStyle={{ fontSize: '0.75rem', paddingTop: 8 }} />
+                    <Bar dataKey="CPU" fill="#0F766E" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="Memory" fill="#D97706" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="Disk" fill="#64748B" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </Card>
+          )}
+        </Box>
+      </Box>
     </Box>
   );
 }
-
-export default Dashboard;

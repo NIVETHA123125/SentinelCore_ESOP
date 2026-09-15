@@ -1,74 +1,55 @@
-import { useState, useEffect, useRef } from 'react';
-import { Snackbar, Alert, Slide, Box } from '@mui/material';
-import { getOpenAlerts } from '../api/alertApi';
+import React from 'react';
+import { Snackbar, Alert, Slide, Box, Typography } from '@mui/material';
+import { useNotifications } from '../context/NotificationContext';
 
 function SlideTransition(props) {
   return <Slide {...props} direction="left" />;
 }
 
 function AlertNotifier() {
-  const [toast, setToast] = useState(null);
-  const seenAlertIds = useRef(new Set());
-  const isFirstLoad = useRef(true);
+  const { latestToast, setLatestToast } = useNotifications();
 
-  useEffect(() => {
-    const checkAlerts = async () => {
-      try {
-        const res = await getOpenAlerts();
-        const alerts = res.data;
+  if (!latestToast) return null;
 
-        if (isFirstLoad.current) {
-          // Don't pop toasts for alerts that already existed before this page loaded
-          alerts.forEach(a => seenAlertIds.current.add(a.id));
-          isFirstLoad.current = false;
-          return;
-        }
-
-        const newAlerts = alerts.filter(a => !seenAlertIds.current.has(a.id));
-        newAlerts.forEach(a => seenAlertIds.current.add(a.id));
-
-        if (newAlerts.length > 0) {
-          setToast(newAlerts[newAlerts.length - 1]); // show the newest one
-        }
-      } catch (err) {
-        console.error('Failed to fetch alerts', err);
-      }
-    };
-
-    checkAlerts();
-    const interval = setInterval(checkAlerts, 15000); // poll every 15s
-    return () => clearInterval(interval);
-  }, []);
-
-  const severityColor = (severity) => {
-    if (severity === 'CRITICAL' || severity === 'HIGH') return 'error';
-    if (severity === 'MEDIUM') return 'warning';
+  const severityColor = (type, severity) => {
+    if (type === 'RESOLVED') return 'success';
+    if (type === 'CRITICAL' || severity === 'CRITICAL' || severity === 'HIGH') return 'error';
+    if (type === 'CREATED' || severity === 'MEDIUM') return 'warning';
     return 'info';
   };
 
   return (
     <Snackbar
-      open={!!toast}
-      autoHideDuration={6000}
-      onClose={() => setToast(null)}
+      open={Boolean(latestToast)}
+      autoHideDuration={4500}
+      onClose={(event, reason) => {
+        if (reason === 'clickaway') return;
+        setLatestToast(null);
+      }}
       anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      sx={{ top: '72px !important', right: '24px !important', zIndex: 9999 }}
       TransitionComponent={SlideTransition}
-      key={toast ? toast.id : 'empty'}
+      key={latestToast.id}
     >
-      <Box sx={{ width: '100%', position: 'relative' }}>
-        {toast && (
-          <Alert onClose={() => setToast(null)} severity={severityColor(toast.severity)} variant="filled" sx={{ overflow: 'hidden' }}>
-            <strong>{toast.assetName}</strong>: {toast.message}
-            <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
-              <Box sx={{ 
-                height: 4, 
-                bgcolor: 'rgba(255,255,255,0.7)', 
-                animation: 'shrink 6s linear forwards',
-                '@keyframes shrink': { '0%': { width: '100%' }, '100%': { width: '0%' } }
-              }} />
-            </Box>
-          </Alert>
-        )}
+      <Box sx={{ width: '100%', maxWidth: 420 }}>
+        <Alert
+          onClose={() => setLatestToast(null)}
+          severity={severityColor(latestToast.type, latestToast.severity)}
+          variant="filled"
+          sx={{
+            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.2)',
+            borderRadius: '8px',
+            fontSize: '0.84rem',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.84rem' }}>
+            {latestToast.title}
+          </Typography>
+          <Typography variant="body2" sx={{ fontSize: '0.78rem', mt: 0.3, opacity: 0.95 }}>
+            {latestToast.message}
+          </Typography>
+        </Alert>
       </Box>
     </Snackbar>
   );

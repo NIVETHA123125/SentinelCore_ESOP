@@ -1,9 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import AssetsPage from './components/AssetsPage';
+import AlertHistory from './components/AlertHistory';
 import AlertNotifier from './components/AlertNotifier';
 import LandingPage from './components/LandingPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 
 function AppRoutes() {
   const { accessToken } = useAuth();
@@ -19,10 +22,27 @@ function AppRoutes() {
         path="/dashboard"
         element={
           accessToken ? (
-            <>
-              <AlertNotifier />
-              <Dashboard />
-            </>
+            <Dashboard />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
+      <Route
+        path="/assets"
+        element={
+          accessToken ? (
+            <AssetsPage />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
+      <Route
+        path="/alerts"
+        element={
+          accessToken ? (
+            <AlertHistory />
           ) : (
             <Navigate to="/login" />
           )
@@ -36,9 +56,12 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <NotificationProvider>
+        <BrowserRouter>
+          <AlertNotifier />
+          <AppRoutes />
+        </BrowserRouter>
+      </NotificationProvider>
     </AuthProvider>
   );
 }
