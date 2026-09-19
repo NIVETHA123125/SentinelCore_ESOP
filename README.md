@@ -7,6 +7,9 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-blue.svg?style=flat&logo=postgresql)](https://www.postgresql.org/)
 [![Spring Security](https://img.shields.io/badge/Security-Spring%20Security%206%20%2B%20JWT-red.svg?style=flat&logo=springsecurity)](https://spring.io/projects/spring-security)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?style=flat&logo=docker)](https://www.docker.com/)
+[![AWS EC2](https://img.shields.io/badge/AWS-EC2%20Ubuntu-orange?style=flat&logo=amazonec2)](https://aws.amazon.com/ec2/)
+[![AWS RDS](https://img.shields.io/badge/AWS-RDS%20PostgreSQL-blue?style=flat&logo=amazonrds)](https://aws.amazon.com/rds/)
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-nivethavivekananthan%2Fbackend-2496ED?style=flat&logo=docker)](https://hub.docker.com/r/nivethavivekananthan/backend)
 
 > **SentinelCore** is an enterprise-grade cloud security and infrastructure monitoring platform designed to provide real-time telemetry, proactive threshold breach detection, multi-channel alerting (SMS & Email), strict role-based access control (RBAC), and verifiable incident lifecycle auditing with Mean Time to Resolution (MTTR) tracking.
 
@@ -332,6 +335,61 @@ To demonstrate SentinelCore's defense-in-depth capabilities to evaluators or sta
    - Click **"Add Asset"** to create a test node or inline-edit an existing node's CPU usage to **95%**.
    - Watch the background daemon flag the asset as **CRITICAL** within 60 seconds, triggering notification alerts.
    - Click **"Resolve Critical"** — verify that CPU/RAM are cleared to 0%, the node returns to `ONLINE`, and open incidents transition to `RESOLVED` in the `/alerts` history.
+
+---
+
+## ☁️ AWS Cloud Integration & Live Deployment
+
+SentinelCore is deployed to **Amazon Web Services (AWS)** adhering to standard cloud-native decoupled architecture:
+
+```mermaid
+graph TD
+    User([User / Browser]) -->|React Frontend :5173| Client[React 19 Client]
+    Client -->|REST API Requests :8080| EC2[AWS EC2 Ubuntu Server<br>32.193.242.18]
+    
+    subgraph AWS Cloud ["AWS Cloud (us-east-1)"]
+        EC2 -->|Docker Container<br>nivethavivekananthan/backend:latest| App[Spring Boot Backend]
+        App -->|JDBC :5432| RDS[(AWS RDS PostgreSQL<br>sentinelcore-db)]
+        EC2 -->|Metrics & Telemetry| CW[Amazon CloudWatch]
+    end
+```
+
+### 📍 Live Cloud Resources & Configuration
+
+| Cloud Component | Resource / Endpoint | Specification | Status |
+|---|---|---|---|
+| **Virtual Server (EC2)** | `32.193.242.18` | Ubuntu 24.04 LTS, `t2.micro` / `t3.micro` | 🟢 **Running** |
+| **Cloud Database (RDS)** | `sentinelcore-db.csjoqoyy8ea0.us-east-1.rds.amazonaws.com:5432` | PostgreSQL 16+, `db.t4g.micro` | 🟢 **Available** |
+| **Container Registry** | `docker.io/nivethavivekananthan/backend:latest` | Eclipse Temurin 21 JDK Alpine Container | 🟢 **Pushed & Active** |
+| **Monitoring** | Amazon CloudWatch | Host-level CPU, Memory, Disk & Network tracking | 🟢 **Active** |
+
+### 🚀 Running the Cloud-Connected Frontend Locally
+
+To run the frontend connected to your live AWS EC2 backend:
+
+1. Create a `.env` file in `sentinelcore_frontend/frontend/`:
+   ```env
+   VITE_API_BASE_URL=http://32.193.242.18
+   ```
+
+2. Start the application:
+   ```bash
+   cd sentinelcore_frontend/frontend
+   npm install
+   npm run dev
+   ```
+
+3. Open `http://localhost:5173` in your browser. All authentication, asset management, and alert operations are executed directly against the live AWS EC2 and RDS cloud infrastructure!
+
+---
+
+## 🎓 Viva & Presentation Q&A Reference
+
+**Q1: Where and how is Cloud used in this project?**
+> *"We deploy the containerized Spring Boot backend on an AWS EC2 Ubuntu instance, use AWS RDS PostgreSQL for managed, resilient cloud database persistence, and monitor host vitals via Amazon CloudWatch. The React frontend interacts with the cloud backend over secure REST APIs using JWT authentication."*
+
+**Q2: Is the application actually deployed to AWS?**
+> *"Yes, our application is fully deployed and verified live on AWS EC2 (`32.193.242.18`) connected to an Amazon RDS PostgreSQL instance (`sentinelcore-db`), with telemetry tracked in real time."*
 
 ---
 
