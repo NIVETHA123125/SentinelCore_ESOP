@@ -12,7 +12,7 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { getAllAssets, getDashboardSummary } from '../api/assetApi';
-import { getAllAlerts } from '../api/alertApi';
+import { getAllAlerts, getOpenAlerts } from '../api/alertApi';
 import Sidebar from './Sidebar';
 import TopHeader from './TopHeader';
 import { useAuth } from '../context/AuthContext';
@@ -53,10 +53,14 @@ export default function Dashboard() {
 
   const fetchSummaryAndAlerts = () => {
     const p1 = getDashboardSummary().then((res) => setSummary(res.data)).catch(() => {});
-    const p2 = getAllAlerts().then((res) => {
-      const openOnes = (res.data || []).filter((a) => a.status?.toUpperCase() === 'OPEN');
-      setOpenAlertsCount(openOnes.length);
-    }).catch(() => {});
+    const p2 = getOpenAlerts().then((res) => {
+      const openCriticalOnes = (res.data || []).filter(
+        (a) => a.status?.toUpperCase() === 'OPEN' && a.severity?.toUpperCase() === 'CRITICAL'
+      );
+      setOpenAlertsCount(openCriticalOnes.length);
+    }).catch(() => {
+      setOpenAlertsCount(0);
+    });
     return Promise.all([p1, p2]);
   };
 
@@ -72,7 +76,7 @@ export default function Dashboard() {
     const s = (a.assetStatus || '').toUpperCase();
     return s === 'CRITICAL' || s === 'WARNING' || s === 'DOWN';
   }).length;
-  const criticalAlertsCount = openAlertsCount || summary.activeAlerts || 0;
+  const criticalAlertsCount = typeof openAlertsCount === 'number' ? openAlertsCount : (summary.activeAlerts || 0);
 
   const avgCpu = totalAssetsCount > 0
     ? (assets.reduce((acc, curr) => acc + (parseFloat(curr.cpuUsage) || 0), 0) / totalAssetsCount).toFixed(2)

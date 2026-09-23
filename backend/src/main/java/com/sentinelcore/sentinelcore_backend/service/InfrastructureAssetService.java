@@ -148,8 +148,8 @@ public class InfrastructureAssetService {
         List<InfrastructureAssetDTO> all = getAllAssets();
         long total = all.size();
         long up = all.stream().filter(a -> "UP".equalsIgnoreCase(a.getAssetStatus()) || "ONLINE".equalsIgnoreCase(a.getAssetStatus())).count();
-        long alerts = all.stream().filter(a -> !"UP".equalsIgnoreCase(a.getAssetStatus()) && !"ONLINE".equalsIgnoreCase(a.getAssetStatus())).count();
+        long openCriticalAlerts = alertRepository.countBySeverityAndStatus(Alert.AlertSeverity.CRITICAL, Alert.AlertStatus.OPEN);
         double uptimePercent = total == 0 ? 0 : (up * 100.0 / total);
-        return new DashboardSummaryDTO(total, Math.round(uptimePercent * 100.0) / 100.0, alerts);
+        return new DashboardSummaryDTO(total, Math.round(uptimePercent * 100.0) / 100.0, openCriticalAlerts);
     }
 }

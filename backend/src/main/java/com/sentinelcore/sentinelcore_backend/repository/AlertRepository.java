@@ -20,4 +20,6 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     // Paginated queries for the AlertHistory page
     Page<Alert> findAllByOrderByCreatedAtDesc(Pageable pageable);
     Page<Alert> findByStatusOrderByCreatedAtDesc(Alert.AlertStatus status, Pageable pageable);
+
+    long countBySeverityAndStatus(Alert.AlertSeverity severity, Alert.AlertStatus status);
 }
