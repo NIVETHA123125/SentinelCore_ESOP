@@ -8,6 +8,8 @@ import com.sentinelcore.sentinelcore_backend.repository.InfrastructureAssetRepos
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -84,6 +86,21 @@ public class AlertService {
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns a paginated slice of alerts sorted by createdAt descending.
+     * Optionally filters by status when the status parameter is provided.
+     * This is used by the AlertHistory page to avoid loading all 20k+ records at once.
+     */
+    public Page<AlertDTO> getAlertsPaged(String status, Pageable pageable) {
+        if (status != null && !status.equalsIgnoreCase("ALL") && !status.isBlank()) {
+            Alert.AlertStatus alertStatus = Alert.AlertStatus.valueOf(status.toUpperCase());
+            return alertRepository.findByStatusOrderByCreatedAtDesc(alertStatus, pageable)
+                    .map(this::toDTO);
+        }
+        return alertRepository.findAllByOrderByCreatedAtDesc(pageable)
+                .map(this::toDTO);
     }
 
     private AlertDTO toDTO(Alert alert) {
