@@ -39,7 +39,7 @@ public class AlertServiceTest {
     }
 
     @Test
-    void testCreateAlert_CriticalSeverity_SendsSmsOnly() {
+    void testCreateAlert_CriticalSeverity_SendsSmsAndEmail() {
         Long assetId = 1L;
         InfrastructureAsset asset = new InfrastructureAsset();
         asset.setId(assetId);
@@ -50,7 +50,7 @@ public class AlertServiceTest {
         alertService.createAlert(assetId, "CRITICAL", "Critical issue");
 
         verify(notificationService, times(1)).sendAlertSms(eq("+1234567890"), eq("TestAsset"), eq("CRITICAL"), eq("Critical issue"));
-        verify(notificationService, never()).sendAlertEmail(anyString(), anyString(), anyString(), anyString());
+        verify(notificationService, times(1)).sendAlertEmail(eq("mynew222028@gmail.com"), eq("TestAsset"), eq("CRITICAL"), eq("Critical issue"));
     }
 
     @Test

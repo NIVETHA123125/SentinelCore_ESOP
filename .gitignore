@@ -34,3 +34,5 @@ build/
 
 ### Ignored Assets ###
 extracted_screenshots/
+*.pem
+

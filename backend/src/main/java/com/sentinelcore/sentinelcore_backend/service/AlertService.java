@@ -30,9 +30,15 @@ public class AlertService {
         InfrastructureAsset asset = assetRepository.findById(assetId)
                 .orElseThrow(() -> new RuntimeException("Asset not found: " + assetId));
 
+        String upperSeverity = severity.toUpperCase();
+        if ("WARNING".equals(upperSeverity)) {
+            upperSeverity = "MEDIUM";
+        }
+        Alert.AlertSeverity alertSeverity = Alert.AlertSeverity.valueOf(upperSeverity);
+
         Alert alert = Alert.builder()
                 .asset(asset)
-                .severity(Alert.AlertSeverity.valueOf(severity))
+                .severity(alertSeverity)
                 .message(message)
                 .status(Alert.AlertStatus.OPEN)
                 .createdAt(LocalDateTime.now())
@@ -41,37 +47,46 @@ public class AlertService {
         alert = alertRepository.save(alert);
         
         LocalDateTime now = LocalDateTime.now();
-        if (asset.getLastNotificationAt() == null || asset.getLastNotificationAt().isBefore(now.minusMinutes(3))) {
-            if ("CRITICAL".equalsIgnoreCase(severity)) {
-                notificationService.sendAlertSms(
-                        toPhoneNumber,
-                        asset.getAssetName(),
-                        alert.getSeverity().name(),
-                        alert.getMessage()
-                );
-            } else {
-                notificationService.sendAlertEmail(
-                        "mynew222028@gmail.com",
-                        asset.getAssetName(), 
-                        alert.getSeverity().name(), 
-                        alert.getMessage()
-                );
-            }
-            asset.setLastNotificationAt(now);
-            assetRepository.save(asset);
+        // Always send Email for all alert types (CRITICAL, WARNING, MEDIUM, HIGH, etc.)
+        notificationService.sendAlertEmail(
+                "mynew222028@gmail.com",
+                asset.getAssetName(), 
+                alert.getSeverity().name(), 
+                alert.getMessage()
+        );
+
+        // In addition, send SMS for CRITICAL alerts
+        if ("CRITICAL".equalsIgnoreCase(severity)) {
+            notificationService.sendAlertSms(
+                    toPhoneNumber,
+                    asset.getAssetName(),
+                    alert.getSeverity().name(),
+                    alert.getMessage()
+            );
         }
+        asset.setLastNotificationAt(now);
+        assetRepository.save(asset);
 
         return toDTO(alert);
     }
 
     public AlertDTO resolveAlert(Long alertId) {
         Alert alert = alertRepository.findById(alertId)
-                .orElseThrow(() -> new RuntimeException("Alert not found: " + alertId));
+                .orElseThrow(() -> new RuntimeException("Asset alert not found: " + alertId));
 
         alert.setStatus(Alert.AlertStatus.RESOLVED);
         alert.setResolvedAt(LocalDateTime.now());
+        Alert savedAlert = alertRepository.save(alert);
 
-        return toDTO(alertRepository.save(alert));
+        // Send email when an alert is resolved
+        notificationService.sendAlertClearedEmail(
+                "mynew222028@gmail.com",
+                alert.getAsset().getAssetName(),
+                alert.getSeverity().name(),
+                alert.getMessage()
+        );
+
+        return toDTO(savedAlert);
     }
 
     public List<AlertDTO> getOpenAlerts() {

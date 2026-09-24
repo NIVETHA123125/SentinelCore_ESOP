@@ -67,7 +67,8 @@ public class NotificationService {
                 log.warn("Twilio is not configured. SMS notification skipped.");
                 return;
             }
-            String smsBody = "sms_internal_alerts";
+            String smsBody = String.format("[SentinelCore %s ALERT] Asset: %s | Message: %s",
+                    severity, assetName, messageText);
             Message sms = Message.creator(
                     new PhoneNumber(toPhoneNumber),
                     new PhoneNumber(twilioPhoneNumber),
