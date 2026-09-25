@@ -66,14 +66,14 @@ function Login() {
         const { accessToken, refreshToken, role } = response.data;
 
         // Client-side role validation against the selected tab
-        const actualRoleIsAdmin = role === 'ROLE_ADMIN';
+        const actualRoleIsAdmin = role === 'ROLE_ADMIN' || role?.includes('ROLE_ADMIN');
         if (isAdminMode && !actualRoleIsAdmin) {
           setError('Access Denied: Account does not have administrative privileges.');
           setLoading(false);
           return;
         }
         if (!isAdminMode && actualRoleIsAdmin) {
-          setError('Please use the Admin login tab for administrative accounts.');
+          setError('Please switch to the "Admin Login" tab for administrative accounts.');
           setLoading(false);
           return;
         }
@@ -81,15 +81,17 @@ function Login() {
         // Store tokens using AuthContext
         loginUser(accessToken, refreshToken);
 
-        // Role-based redirect
-        if (actualRoleIsAdmin) {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/dashboard');
-        }
+        // Redirect to dashboard
+        navigate('/dashboard');
       })
-      .catch(() => {
-        setError('Invalid username or password');
+      .catch((err) => {
+        if (!err.response) {
+          setError('Unable to connect to backend server. Please verify that the Spring Boot backend is running.');
+        } else if (err.response.status === 401) {
+          setError('Invalid username or password.');
+        } else {
+          setError(err.response.data?.message || 'Login failed. Please check your credentials.');
+        }
         setLoading(false);
       });
   };
