@@ -16,6 +16,8 @@ import ShieldIcon from '@mui/icons-material/Shield';
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard';
 import StorageIcon from '@mui/icons-material/Storage';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import BugReportIcon from '@mui/icons-material/BugReport';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -170,6 +172,32 @@ export default function Sidebar() {
                 }}
               />
             )}
+          </ListItemButton>
+
+          <ListItemButton
+            onClick={() => navigate('/incidents')}
+            sx={navItemStyles(currentPath === '/incidents')}
+          >
+            <ListItemIcon sx={{ minWidth: 32, color: currentPath === '/incidents' ? '#0F766E' : '#64748B' }}>
+              <ReportProblemIcon sx={{ fontSize: 18 }} />
+            </ListItemIcon>
+            <ListItemText
+              primary="Incidents"
+              primaryTypographyProps={{ fontSize: '0.84rem', fontWeight: currentPath === '/incidents' ? 600 : 500 }}
+            />
+          </ListItemButton>
+
+          <ListItemButton
+            onClick={() => navigate('/vulnerabilities')}
+            sx={navItemStyles(currentPath === '/vulnerabilities')}
+          >
+            <ListItemIcon sx={{ minWidth: 32, color: currentPath === '/vulnerabilities' ? '#0F766E' : '#64748B' }}>
+              <BugReportIcon sx={{ fontSize: 18 }} />
+            </ListItemIcon>
+            <ListItemText
+              primary="Vulnerabilities"
+              primaryTypographyProps={{ fontSize: '0.84rem', fontWeight: currentPath === '/vulnerabilities' ? 600 : 500 }}
+            />
           </ListItemButton>
         </List>
       </Box>

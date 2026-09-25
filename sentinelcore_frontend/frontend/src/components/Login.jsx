@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -22,7 +22,13 @@ import { useAuth } from '../context/AuthContext';
 
 function Login() {
   const navigate = useNavigate();
-  const { loginUser } = useAuth();
+  const { loginUser, logoutUser } = useAuth();
+
+  // Clear any existing session when the login page mounts
+  // This ensures a fresh login experience every time
+  useEffect(() => {
+    logoutUser();
+  }, []);
   // 0 = User, 1 = Admin
   const [tabIndex, setTabIndex] = useState(0);
   const [formData, setFormData] = useState({ username: '', password: '' });

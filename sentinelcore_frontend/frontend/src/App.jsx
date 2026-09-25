@@ -3,6 +3,8 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import AssetsPage from './components/AssetsPage';
 import AlertHistory from './components/AlertHistory';
+import IncidentsPage from './components/IncidentsPage';
+import VulnerabilitiesPage from './components/VulnerabilitiesPage';
 import AlertNotifier from './components/AlertNotifier';
 import LandingPage from './components/LandingPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -16,7 +18,7 @@ function AppRoutes() {
       <Route path="/" element={<LandingPage />} />
       <Route
         path="/login"
-        element={accessToken ? <Navigate to="/dashboard" /> : <Login />}
+        element={<Login />}
       />
       <Route
         path="/dashboard"
@@ -43,6 +45,26 @@ function AppRoutes() {
         element={
           accessToken ? (
             <AlertHistory />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
+      <Route
+        path="/incidents"
+        element={
+          accessToken ? (
+            <IncidentsPage />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
+      <Route
+        path="/vulnerabilities"
+        element={
+          accessToken ? (
+            <VulnerabilitiesPage />
           ) : (
             <Navigate to="/login" />
           )

@@ -138,7 +138,7 @@ export default function Dashboard() {
         />
 
         {/* Page Container */}
-        <Box sx={{ p: { xs: 2.5, md: 3.5 }, maxWidth: 1200, width: '100%', mx: 'auto', boxSizing: 'border-box' }}>
+        <Box sx={{ p: { xs: 2.5, md: 3.5 }, width: '100%', boxSizing: 'border-box' }}>
           {/* Overview Header */}
           <Box sx={{ position: 'relative', mb: 3.5, textAlign: 'center' }}>
             <Typography variant="caption" sx={{ fontWeight: 700, color: '#0F766E', letterSpacing: '0.12em', fontSize: '0.68rem', textTransform: 'uppercase', display: 'block', mb: 0.4 }}>
@@ -163,217 +163,229 @@ export default function Dashboard() {
           </Box>
 
           {/* 6 Summary Metric Cards */}
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' }, gap: 1.5, mb: 3, width: '100%' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' }, gap: 1.5, mb: 3, width: '100%' }}>
             {/* Card 1: TOTAL ASSETS */}
-            <Card elevation={0} onClick={() => navigate('/assets')} sx={{ borderRadius: '10px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 1.8, textAlign: 'center', cursor: 'pointer', '&:hover': { boxShadow: '0 3px 8px rgba(0,0,0,0.05)' } }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', fontSize: '0.65rem', textTransform: 'uppercase' }}>TOTAL ASSETS</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, color: '#0F172A', my: 0.4 }}>{loading ? <Skeleton width={30} sx={{ mx: 'auto' }} /> : totalAssetsCount}</Typography>
-              <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.68rem' }}>Monitored</Typography>
+            <Card elevation={0} onClick={() => navigate('/assets')} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2, textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s', '&:hover': { boxShadow: '0 4px 16px rgba(15,118,110,0.10)', borderColor: '#0F766E', transform: 'translateY(-2px)' } }}>
+              <Box sx={{ width: 36, height: 36, borderRadius: '10px', bgcolor: 'rgba(15,118,110,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 1 }}>
+                <DnsIcon sx={{ fontSize: 18, color: '#0F766E' }} />
+              </Box>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A', lineHeight: 1, mb: 0.3 }}>{loading ? <Skeleton width={30} sx={{ mx: 'auto' }} /> : totalAssetsCount}</Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Assets</Typography>
             </Card>
 
             {/* Card 2: ONLINE ASSETS */}
-            <Card elevation={0} onClick={() => navigate('/assets')} sx={{ borderRadius: '10px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 1.8, textAlign: 'center', cursor: 'pointer', '&:hover': { boxShadow: '0 3px 8px rgba(0,0,0,0.05)' } }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', fontSize: '0.65rem', textTransform: 'uppercase' }}>ONLINE ASSETS</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, color: '#16A34A', my: 0.4 }}>{loading ? <Skeleton width={30} sx={{ mx: 'auto' }} /> : onlineAssetsCount}</Typography>
-              <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.68rem' }}>Healthy</Typography>
+            <Card elevation={0} onClick={() => navigate('/assets')} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2, textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s', '&:hover': { boxShadow: '0 4px 16px rgba(22,163,74,0.10)', borderColor: '#16A34A', transform: 'translateY(-2px)' } }}>
+              <Box sx={{ width: 36, height: 36, borderRadius: '10px', bgcolor: 'rgba(22,163,74,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 1 }}>
+                <CheckCircleIcon sx={{ fontSize: 18, color: '#16A34A' }} />
+              </Box>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: '#16A34A', lineHeight: 1, mb: 0.3 }}>{loading ? <Skeleton width={30} sx={{ mx: 'auto' }} /> : onlineAssetsCount}</Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Online</Typography>
             </Card>
 
-            {/* Card 3: OPEN INCIDENTS */}
-            <Card elevation={0} sx={{ borderRadius: '10px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 1.8, textAlign: 'center' }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', fontSize: '0.65rem', textTransform: 'uppercase' }}>INCIDENTS</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, color: openIncidentsCount > 0 ? '#DC2626' : '#0F172A', my: 0.4 }}>{loading ? <Skeleton width={30} sx={{ mx: 'auto' }} /> : openIncidentsCount}</Typography>
-              <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.68rem' }}>Active Open</Typography>
+            {/* Card 3: INCIDENTS */}
+            <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2, textAlign: 'center', transition: 'all 0.2s', '&:hover': { boxShadow: '0 4px 16px rgba(220,38,38,0.08)', borderColor: '#DC2626', transform: 'translateY(-2px)' } }}>
+              <Box sx={{ width: 36, height: 36, borderRadius: '10px', bgcolor: 'rgba(220,38,38,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 1 }}>
+                <ReportProblemIcon sx={{ fontSize: 18, color: '#DC2626' }} />
+              </Box>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: openIncidentsCount > 0 ? '#DC2626' : '#0F172A', lineHeight: 1, mb: 0.3 }}>{loading ? <Skeleton width={30} sx={{ mx: 'auto' }} /> : openIncidentsCount}</Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Incidents</Typography>
             </Card>
 
             {/* Card 4: VULNERABILITIES */}
-            <Card elevation={0} sx={{ borderRadius: '10px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 1.8, textAlign: 'center' }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', fontSize: '0.65rem', textTransform: 'uppercase' }}>VULNERABILITIES</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, color: openVulnsCount > 0 ? '#D97706' : '#0F172A', my: 0.4 }}>{loading ? <Skeleton width={30} sx={{ mx: 'auto' }} /> : openVulnsCount}</Typography>
-              <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.68rem' }}>Unpatched</Typography>
+            <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2, textAlign: 'center', transition: 'all 0.2s', '&:hover': { boxShadow: '0 4px 16px rgba(217,119,6,0.08)', borderColor: '#D97706', transform: 'translateY(-2px)' } }}>
+              <Box sx={{ width: 36, height: 36, borderRadius: '10px', bgcolor: 'rgba(217,119,6,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 1 }}>
+                <BugReportIcon sx={{ fontSize: 18, color: '#D97706' }} />
+              </Box>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: openVulnsCount > 0 ? '#D97706' : '#0F172A', lineHeight: 1, mb: 0.3 }}>{loading ? <Skeleton width={30} sx={{ mx: 'auto' }} /> : openVulnsCount}</Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Vulns</Typography>
             </Card>
 
             {/* Card 5: COMPLIANCE */}
-            <Card elevation={0} sx={{ borderRadius: '10px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 1.8, textAlign: 'center' }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', fontSize: '0.65rem', textTransform: 'uppercase' }}>COMPLIANCE</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, color: '#0F766E', my: 0.4 }}>{loading ? <Skeleton width={30} sx={{ mx: 'auto' }} /> : complianceChecks.length}</Typography>
-              <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.68rem' }}>Checks</Typography>
+            <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2, textAlign: 'center', transition: 'all 0.2s', '&:hover': { boxShadow: '0 4px 16px rgba(15,118,110,0.08)', borderColor: '#0F766E', transform: 'translateY(-2px)' } }}>
+              <Box sx={{ width: 36, height: 36, borderRadius: '10px', bgcolor: 'rgba(15,118,110,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 1 }}>
+                <VerifiedUserIcon sx={{ fontSize: 18, color: '#0F766E' }} />
+              </Box>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F766E', lineHeight: 1, mb: 0.3 }}>{loading ? <Skeleton width={30} sx={{ mx: 'auto' }} /> : complianceChecks.length}</Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Compliance</Typography>
             </Card>
 
             {/* Card 6: AUDIT LOGS */}
-            <Card elevation={0} sx={{ borderRadius: '10px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 1.8, textAlign: 'center' }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', fontSize: '0.65rem', textTransform: 'uppercase' }}>AUDIT LOGS</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, color: '#0F172A', my: 0.4 }}>{loading ? <Skeleton width={30} sx={{ mx: 'auto' }} /> : auditLogs.length}</Typography>
-              <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.68rem' }}>Total Logs</Typography>
+            <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2, textAlign: 'center', transition: 'all 0.2s', '&:hover': { boxShadow: '0 4px 16px rgba(100,116,139,0.08)', borderColor: '#64748B', transform: 'translateY(-2px)' } }}>
+              <Box sx={{ width: 36, height: 36, borderRadius: '10px', bgcolor: 'rgba(100,116,139,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 1 }}>
+                <HistoryIcon sx={{ fontSize: 18, color: '#64748B' }} />
+              </Box>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A', lineHeight: 1, mb: 0.3 }}>{loading ? <Skeleton width={30} sx={{ mx: 'auto' }} /> : auditLogs.length}</Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94A3B8', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Audit Logs</Typography>
             </Card>
           </Box>
 
-          {/* Section 1: Security Incidents & Vulnerability Management */}
-          <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
-            {/* Left: Security Incidents */}
-            <Grid item xs={12} md={6}>
-              <Card elevation={0} sx={{ borderRadius: '10px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2.5, height: '100%' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <ReportProblemIcon sx={{ color: '#DC2626', fontSize: 20 }} />
-                    <Typography variant="body1" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.95rem' }}>
-                      Active Security Incidents
-                    </Typography>
+          {/* ── 4 Content Boxes — CSS grid, full width ── */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2.5, mb: 3, width: '100%' }}>
+
+            {/* Box 1: Security Incidents */}
+            <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2.5 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: 'rgba(220,38,38,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ReportProblemIcon sx={{ color: '#DC2626', fontSize: 18 }} />
                   </Box>
-                  <Chip label={`${incidents.length} total`} size="small" variant="outlined" />
+                  <Typography variant="body1" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.92rem' }}>Active Security Incidents</Typography>
                 </Box>
-                <Stack spacing={1.2}>
-                  {incidents.map((inc) => {
-                    const badge = statusBadgeStyle(inc.severity);
-                    const isResolved = inc.status === 'RESOLVED';
-                    return (
-                      <Box key={inc.id} sx={{ p: 1.5, borderRadius: '8px', border: '1px solid #F1F5F9', bgcolor: '#F8FAFC' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>{inc.title}</Typography>
-                          <Chip label={inc.severity} size="small" sx={{ bgcolor: badge.bg, color: badge.text, border: `1px solid ${badge.border}`, fontWeight: 700, fontSize: '0.65rem', height: 20 }} />
-                        </Box>
-                        <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>{inc.description}</Typography>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography variant="caption" sx={{ color: '#94A3B8' }}>Assigned: <strong>{inc.assignedTo || 'Unassigned'}</strong></Typography>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            {!inc.assignedTo && (
-                              <Button size="small" variant="outlined" onClick={() => handleAssign(inc.id)} sx={{ fontSize: '0.7rem', py: 0.2 }}>Assign to me</Button>
-                            )}
-                            {!isResolved && (
-                              <Button size="small" variant="contained" color="success" onClick={() => handleResolve(inc.id)} sx={{ fontSize: '0.7rem', py: 0.2, textTransform: 'none' }}>Resolve</Button>
-                            )}
-                          </Box>
+                <Chip label={`${incidents.length} total`} size="small" variant="outlined" sx={{ fontSize: '0.7rem', height: 22, borderColor: '#E2E8F0', color: '#64748B' }} />
+              </Box>
+              <Stack spacing={1.2}>
+                {incidents.map((inc) => {
+                  const badge = statusBadgeStyle(inc.severity);
+                  const isResolved = inc.status === 'RESOLVED';
+                  return (
+                    <Box key={inc.id} sx={{ p: 1.5, borderRadius: '8px', border: '1px solid #F1F5F9', bgcolor: '#F8FAFC' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>{inc.title}</Typography>
+                        <Chip label={inc.severity} size="small" sx={{ bgcolor: badge.bg, color: badge.text, border: `1px solid ${badge.border}`, fontWeight: 700, fontSize: '0.65rem', height: 20 }} />
+                      </Box>
+                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>{inc.description}</Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="caption" sx={{ color: '#94A3B8' }}>Assigned: <strong>{inc.assignedTo || 'Unassigned'}</strong></Typography>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          {!inc.assignedTo && (<Button size="small" variant="outlined" onClick={() => handleAssign(inc.id)} sx={{ fontSize: '0.7rem', py: 0.2, textTransform: 'none' }}>Assign to me</Button>)}
+                          {!isResolved && (<Button size="small" variant="contained" color="success" onClick={() => handleResolve(inc.id)} sx={{ fontSize: '0.7rem', py: 0.2, textTransform: 'none' }}>Resolve</Button>)}
                         </Box>
                       </Box>
-                    );
-                  })}
-                  {incidents.length === 0 && (
-                    <Typography variant="caption" sx={{ color: '#94A3B8', textAlign: 'center', py: 2 }}>No active security incidents reported.</Typography>
-                  )}
-                </Stack>
-              </Card>
-            </Grid>
-
-            {/* Right: Vulnerabilities Scanner */}
-            <Grid item xs={12} md={6}>
-              <Card elevation={0} sx={{ borderRadius: '10px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2.5, height: '100%' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <BugReportIcon sx={{ color: '#D97706', fontSize: 20 }} />
-                    <Typography variant="body1" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.95rem' }}>
-                      Vulnerabilities & CVE Tracker
-                    </Typography>
-                  </Box>
-                  <Chip label={`${vulnerabilities.length} tracked`} size="small" variant="outlined" />
-                </Box>
-                <Stack spacing={1.2}>
-                  {vulnerabilities.map((vuln) => {
-                    const isPatched = vuln.patchStatus === 'PATCHED';
-                    return (
-                      <Box key={vuln.id} sx={{ p: 1.5, borderRadius: '8px', border: '1px solid #F1F5F9', bgcolor: '#F8FAFC' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>{vuln.cveId} - {vuln.title}</Typography>
-                          <Chip label={`Risk Score: ${vuln.riskScore || 'N/A'}`} size="small" color={vuln.riskScore >= 7 ? "error" : "warning"} sx={{ fontWeight: 700, fontSize: '0.65rem', height: 20 }} />
-                        </Box>
-                        <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 0.5 }}>Target: {vuln.affectedSystem} | Patch Ver: {vuln.patchVersion}</Typography>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.8 }}>
-                          <Chip label={vuln.patchStatus || 'OPEN'} size="small" color={isPatched ? "success" : "warning"} variant="outlined" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700 }} />
-                          {!isPatched && (
-                            <Button size="small" variant="outlined" color="primary" onClick={() => handlePatch(vuln.id)} sx={{ fontSize: '0.7rem', py: 0.2, textTransform: 'none' }}>Mark Patched</Button>
-                          )}
-                        </Box>
-                      </Box>
-                    );
-                  })}
-                  {vulnerabilities.length === 0 && (
-                    <Typography variant="caption" sx={{ color: '#94A3B8', textAlign: 'center', py: 2 }}>No open CVE vulnerabilities detected.</Typography>
-                  )}
-                </Stack>
-              </Card>
-            </Grid>
-          </Grid>
-
-          {/* Section 2: Compliance Checks & Audit Log Activity */}
-          <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
-            {/* Left: Compliance Framework Checks */}
-            <Grid item xs={12} md={6}>
-              <Card elevation={0} sx={{ borderRadius: '10px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2.5, height: '100%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <VerifiedUserIcon sx={{ color: '#0F766E', fontSize: 20 }} />
-                  <Typography variant="body1" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.95rem' }}>
-                    Compliance Framework Status
-                  </Typography>
-                </Box>
-                <Stack spacing={1.2}>
-                  {complianceChecks.map((check) => {
-                    const badge = statusBadgeStyle(check.status);
-                    return (
-                      <Box key={check.id} sx={{ p: 1.5, borderRadius: '8px', border: '1px solid #F1F5F9', bgcolor: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>{check.framework} ({check.controlId})</Typography>
-                          <Typography variant="caption" sx={{ color: '#64748B' }}>{check.controlName} - {check.remarks}</Typography>
-                        </Box>
-                        <Chip label={check.status} size="small" sx={{ bgcolor: badge.bg, color: badge.text, border: `1px solid ${badge.border}`, fontWeight: 700, fontSize: '0.65rem' }} />
-                      </Box>
-                    );
-                  })}
-                  {complianceChecks.length === 0 && (
-                    <Typography variant="caption" sx={{ color: '#94A3B8', textAlign: 'center', py: 2 }}>No compliance checks recorded.</Typography>
-                  )}
-                </Stack>
-              </Card>
-            </Grid>
-
-            {/* Right: Audit Log Trail */}
-            <Grid item xs={12} md={6}>
-              <Card elevation={0} sx={{ borderRadius: '10px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2.5, height: '100%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <HistoryIcon sx={{ color: '#64748B', fontSize: 20 }} />
-                  <Typography variant="body1" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.95rem' }}>
-                    Audit Log Trail
-                  </Typography>
-                </Box>
-                <Stack spacing={1.2}>
-                  {auditLogs.slice(-4).reverse().map((log) => (
-                    <Box key={log.id} sx={{ p: 1.2, borderRadius: '8px', border: '1px solid #F1F5F9', bgcolor: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A', fontSize: '0.8rem' }}>{log.action} - {log.resource}</Typography>
-                        <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontSize: '0.72rem' }}>User: {log.username} | IP: {log.ipAddress}</Typography>
-                      </Box>
-                      <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.68rem', fontFamily: 'monospace' }}>{log.details}</Typography>
                     </Box>
-                  ))}
-                  {auditLogs.length === 0 && (
-                    <Typography variant="caption" sx={{ color: '#94A3B8', textAlign: 'center', py: 2 }}>No audit activity recorded.</Typography>
-                  )}
-                </Stack>
-              </Card>
-            </Grid>
-          </Grid>
+                  );
+                })}
+                {incidents.length === 0 && (
+                  <Box sx={{ py: 3, textAlign: 'center' }}>
+                    <CheckCircleIcon sx={{ color: '#A7F3D0', fontSize: 32, mb: 0.5 }} />
+                    <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block' }}>No active security incidents reported.</Typography>
+                  </Box>
+                )}
+              </Stack>
+            </Card>
 
-          {/* Infrastructure Chart */}
+            {/* Box 2: Vulnerabilities */}
+            <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2.5 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: 'rgba(217,119,6,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <BugReportIcon sx={{ color: '#D97706', fontSize: 18 }} />
+                  </Box>
+                  <Typography variant="body1" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.92rem' }}>Vulnerabilities &amp; CVE Tracker</Typography>
+                </Box>
+                <Chip label={`${vulnerabilities.length} tracked`} size="small" variant="outlined" sx={{ fontSize: '0.7rem', height: 22, borderColor: '#E2E8F0', color: '#64748B' }} />
+              </Box>
+              <Stack spacing={1.2}>
+                {vulnerabilities.map((vuln) => {
+                  const isPatched = vuln.patchStatus === 'PATCHED';
+                  return (
+                    <Box key={vuln.id} sx={{ p: 1.5, borderRadius: '8px', border: '1px solid #F1F5F9', bgcolor: '#F8FAFC' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>{vuln.cveId} - {vuln.title}</Typography>
+                        <Chip label={`Score: ${vuln.riskScore || 'N/A'}`} size="small" color={vuln.riskScore >= 7 ? 'error' : 'warning'} sx={{ fontWeight: 700, fontSize: '0.65rem', height: 20 }} />
+                      </Box>
+                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 0.5 }}>Target: {vuln.affectedSystem} | Patch: {vuln.patchVersion}</Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.8 }}>
+                        <Chip label={vuln.patchStatus || 'OPEN'} size="small" color={isPatched ? 'success' : 'warning'} variant="outlined" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700 }} />
+                        {!isPatched && (<Button size="small" variant="outlined" color="primary" onClick={() => handlePatch(vuln.id)} sx={{ fontSize: '0.7rem', py: 0.2, textTransform: 'none' }}>Mark Patched</Button>)}
+                      </Box>
+                    </Box>
+                  );
+                })}
+                {vulnerabilities.length === 0 && (
+                  <Box sx={{ py: 3, textAlign: 'center' }}>
+                    <VerifiedUserIcon sx={{ color: '#A7F3D0', fontSize: 32, mb: 0.5 }} />
+                    <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block' }}>No open CVE vulnerabilities detected.</Typography>
+                  </Box>
+                )}
+              </Stack>
+            </Card>
+
+            {/* Box 3: Compliance */}
+            <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: 'rgba(15,118,110,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <VerifiedUserIcon sx={{ color: '#0F766E', fontSize: 18 }} />
+                </Box>
+                <Typography variant="body1" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.92rem' }}>Compliance Framework Status</Typography>
+              </Box>
+              <Stack spacing={1.2}>
+                {complianceChecks.map((check) => {
+                  const badge = statusBadgeStyle(check.status);
+                  return (
+                    <Box key={check.id} sx={{ p: 1.5, borderRadius: '8px', border: '1px solid #F1F5F9', bgcolor: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>{check.framework} ({check.controlId})</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B' }}>{check.controlName} - {check.remarks}</Typography>
+                      </Box>
+                      <Chip label={check.status} size="small" sx={{ bgcolor: badge.bg, color: badge.text, border: `1px solid ${badge.border}`, fontWeight: 700, fontSize: '0.65rem' }} />
+                    </Box>
+                  );
+                })}
+                {complianceChecks.length === 0 && (
+                  <Box sx={{ py: 3, textAlign: 'center' }}>
+                    <VerifiedUserIcon sx={{ color: '#A7F3D0', fontSize: 32, mb: 0.5 }} />
+                    <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block' }}>No compliance checks recorded.</Typography>
+                  </Box>
+                )}
+              </Stack>
+            </Card>
+
+            {/* Box 4: Audit Log Trail */}
+            <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: 'rgba(100,116,139,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <HistoryIcon sx={{ color: '#64748B', fontSize: 18 }} />
+                </Box>
+                <Typography variant="body1" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.92rem' }}>Audit Log Trail</Typography>
+              </Box>
+              <Stack spacing={1.2}>
+                {auditLogs.slice(-5).reverse().map((log) => (
+                  <Box key={log.id} sx={{ p: 1.2, borderRadius: '8px', border: '1px solid #F1F5F9', bgcolor: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A', fontSize: '0.8rem' }}>{log.action} - {log.resource}</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontSize: '0.72rem' }}>User: {log.username} | IP: {log.ipAddress}</Typography>
+                    </Box>
+                    <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.68rem', fontFamily: 'monospace', ml: 1, flexShrink: 0 }}>{log.details}</Typography>
+                  </Box>
+                ))}
+                {auditLogs.length === 0 && (
+                  <Box sx={{ py: 3, textAlign: 'center' }}>
+                    <HistoryIcon sx={{ color: '#CBD5E1', fontSize: 32, mb: 0.5 }} />
+                    <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block' }}>No audit activity recorded.</Typography>
+                  </Box>
+                )}
+              </Stack>
+            </Card>
+          </Box>
+
+          {/* ── Infrastructure Chart — full width at bottom ── */}
           {chartData.length > 0 && (
-            <Card elevation={0} sx={{ borderRadius: '10px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2.5, boxShadow: '0 1px 3px rgba(0,0,0,0.02)', mb: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+            <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', p: 2.5, mb: 3, width: '100%', boxSizing: 'border-box' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Box>
-                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#0F172A', fontSize: '0.92rem', mb: 0.2 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.92rem', mb: 0.2 }}>
                     Hardware Resource Distribution
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.74rem' }}>
                     Comparative CPU, Memory, and Disk metrics across all assets
                   </Typography>
                 </Box>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}><Box sx={{ width: 10, height: 10, borderRadius: '2px', bgcolor: '#0F766E' }} /><Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.72rem' }}>CPU</Typography></Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}><Box sx={{ width: 10, height: 10, borderRadius: '2px', bgcolor: '#D97706' }} /><Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.72rem' }}>Memory</Typography></Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}><Box sx={{ width: 10, height: 10, borderRadius: '2px', bgcolor: '#64748B' }} /><Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.72rem' }}>Disk</Typography></Box>
+                </Box>
               </Box>
-              <Box sx={{ width: '100%', height: 200, minWidth: 0 }}>
+              <Box sx={{ width: '100%', height: 240, minWidth: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                    <XAxis dataKey="name" stroke="#94A3B8" fontSize={11} />
-                    <YAxis stroke="#94A3B8" fontSize={11} domain={[0, 100]} />
-                    <RechartsTooltip />
-                    <Legend wrapperStyle={{ fontSize: '0.75rem', paddingTop: 8 }} />
-                    <Bar dataKey="CPU" fill="#0F766E" radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="Memory" fill="#D97706" radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="Disk" fill="#64748B" radius={[3, 3, 0, 0]} />
+                  <BarChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                    <XAxis dataKey="name" stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#94A3B8" fontSize={11} domain={[0, 100]} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
+                    <RechartsTooltip contentStyle={{ borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.78rem' }} formatter={(value, name) => [`${value}%`, name]} />
+                    <Bar dataKey="CPU" fill="#0F766E" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                    <Bar dataKey="Memory" fill="#D97706" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                    <Bar dataKey="Disk" fill="#64748B" radius={[4, 4, 0, 0]} maxBarSize={32} />
                   </BarChart>
                 </ResponsiveContainer>
               </Box>
